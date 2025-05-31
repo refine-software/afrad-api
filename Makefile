@@ -1,17 +1,17 @@
-# Simple Makefile for a Go project
+include .env
+export
 
 # Build the application
 all: build test
 
 build:
 	@echo "Building..."
-	
-	
 	@go build -o main cmd/api/main.go
 
 # Run the application
 run:
 	@go run cmd/api/main.go
+
 # Create DB container
 docker-run:
 	@if docker compose up --build 2>/dev/null; then \
@@ -30,7 +30,6 @@ docker-down:
 		docker-compose down; \
 	fi
 
-
 # Run the application in development mode
 docker-dev:
 	@echo "Building and starting containers in development mode..."
@@ -40,6 +39,20 @@ docker-dev:
 docker-dev-down:
 	@echo "Stopping development containers..."
 	docker compose -f docker-compose.dev.yml down
+
+migrate-up:
+	@goose -dir ./internal/database/migrations/ postgres "$(DATABASE_URL)" up
+
+migrate-down:
+	@goose -dir ./internal/database/migrations/ postgres "$(DATABASE_URL)" down
+
+create-migration:
+	@read -p "Enter migration name: " name; \
+	if [ -z "$$name" ]; then \
+		echo "Migration name cannot be empty."; \
+		exit 1; \
+	fi; \
+	goose -dir ./internal/database/migrations/ create "$$name" sql
 
 # Test the application
 test:
