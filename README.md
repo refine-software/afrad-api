@@ -1,53 +1,23 @@
-# Project afrad-api
+# afrad-api
 
-One Paragraph of project description goes here
+## Get Up and Running
 
-## Getting Started
+## ENV File
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+**NOTE:** These environment variables are for development, so it's safe to upload them.
 
-## MakeFile
+```txt
+# APP
+PORT=8080
+APP_ENV=dev # use 'dev' for development and 'prod' for production
 
-Run build make command with tests
-```bash
-make all
-```
+# DB
+DB_HOST="afrad_db"
+DB_PORT=5432
+DB_DATABASE="afrad_db"
+DB_USERNAME="afrad_api"
+DB_PASSWORD="afrad1020"
+DB_SCHEMA=public
 
-Build the application
-```bash
-make build
-```
-
-Run the application
-```bash
-make run
-```
-Create DB container
-```bash
-make docker-run
-```
-
-Shutdown DB Container
-```bash
-make docker-down
-```
-
-DB Integrations Test:
-```bash
-make itest
-```
-
-Live reload the application:
-```bash
-make watch
-```
-
-Run the test suite:
-```bash
-make test
-```
-
-Clean up binary from the last build:
-```bash
-make clean
+DATABASE_URL=postgres://afrad_api:afrad1020@localhost:5432/afrad_db?sslmode=disable
 ```
