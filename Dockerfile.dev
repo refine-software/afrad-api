@@ -1,0 +1,30 @@
+# Stage 1: Base builder with Go & Air installed
+FROM golang:1.24.3-alpine3.21 AS base
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN go mod download && \
+  go install github.com/air-verse/air@latest && \
+  go install github.com/swaggo/swag/cmd/swag@latest
+
+
+# Stage 2: Development environment
+FROM golang:1.24.3-alpine3.21 AS dev
+
+WORKDIR /app
+
+# Copy cached Go modules and Air binary
+COPY --from=base /go/pkg /go/pkg
+COPY --from=base /go/bin/air /usr/local/bin/air
+COPY --from=base /go/bin/swag /usr/local/bin/swag
+
+# Copy the rest of the application files
+COPY . .
+
+ENV APP_ENV=dev
+
+EXPOSE 8080
+
+CMD ["air"]
