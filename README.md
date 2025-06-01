@@ -20,4 +20,10 @@ DB_PASSWORD="afrad1020"
 DB_SCHEMA=public
 
 DATABASE_URL=postgres://afrad_api:afrad1020@localhost:5432/afrad_db?sslmode=disable
+
+# S3
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_REGION=
+S3_BUCKET=
 ```

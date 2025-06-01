@@ -8,6 +8,7 @@ import (
 )
 
 type Env struct {
+	// APP
 	Environment string `mapstructure:"APP_ENV"`
 	Port        int    `mapstructure:"PORT"`
 
@@ -20,6 +21,12 @@ type Env struct {
 	DBSchema   string `mapstructure:"DB_SCHEMA"`
 	SSLMode    string `mapstructure:"SSL_MODE"`
 	DBUrl      string
+
+	// S3
+	S3AccessKey       string `mapstructure:"S3_ACCESS_KEY_ID"`
+	S3SecretAccessKey string `mapstructure:"S3_SECRET_ACCESS_KEY"`
+	S3Region          string `mapstructure:"S3_REGION"`
+	S3Bucket          string `mapstructure:"S3_BUCKET"`
 }
 
 func NewEnv() *Env {
@@ -70,6 +77,7 @@ func bindEnvVariables() {
 	vars := []string{
 		"APP_ENV",
 		"PORT",
+		// DB
 		"DB_HOST",
 		"DB_PORT",
 		"DB_DATABASE",
@@ -77,6 +85,11 @@ func bindEnvVariables() {
 		"DB_PASSWORD",
 		"DB_SCHEMA",
 		"SSL_MODE",
+		// S3
+		"S3_ACCESS_KEY_ID",
+		"S3_SECRET_ACCESS_KEY",
+		"S3_REGION",
+		"S3_BUCKET",
 	}
 
 	for _, key := range vars {

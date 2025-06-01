@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"afrad-api/internal/server"
+	"github.com/refine-software/afrad-api/internal/server"
 )
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {

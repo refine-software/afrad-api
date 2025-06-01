@@ -1,5 +1,5 @@
 services:
-  afrad-api:
+  afrad_api:
     build:
       context: .
       dockerfile: Dockerfile.dev

@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"afrad-api/internal/middleware"
-
 	"github.com/gin-gonic/gin"
+	"github.com/refine-software/afrad-api/internal/middleware"
 
 	"github.com/coder/websocket"
 )

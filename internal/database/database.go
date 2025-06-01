@@ -4,11 +4,10 @@ import (
 	"context"
 	"log"
 
-	"afrad-api/config"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/refine-software/afrad-api/config"
 )
 
 // Service represents a service that interacts with a database.
