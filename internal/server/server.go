@@ -3,10 +3,9 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"time"
 
+	"afrad-api/config"
 	"afrad-api/internal/database"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -15,15 +14,18 @@ import (
 type Server struct {
 	port int
 
-	db database.Service
+	db  database.Service
+	env *config.Env
 }
 
 func NewServer() *http.Server {
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	NewServer := &Server{
-		port: port,
+	env := config.NewEnv()
 
-		db: database.New(),
+	NewServer := &Server{
+		port: env.Port,
+
+		db:  database.New(env),
+		env: env,
 	}
 
 	// Declare Server config

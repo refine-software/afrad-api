@@ -1,0 +1,87 @@
+package config
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/spf13/viper"
+)
+
+type Env struct {
+	Environment string `mapstructure:"APP_ENV"`
+	Port        int    `mapstructure:"PORT"`
+
+	// DB
+	DBHost     string `mapstructure:"DB_HOST"`
+	DBPort     string `mapstructure:"DB_PORT"`
+	DBName     string `mapstructure:"DB_DATABASE"`
+	DBUsername string `mapstructure:"DB_USERNAME"`
+	DBPassword string `mapstructure:"DB_PASSWORD"`
+	DBSchema   string `mapstructure:"DB_SCHEMA"`
+	SSLMode    string `mapstructure:"SSL_MODE"`
+	DBUrl      string
+}
+
+func NewEnv() *Env {
+	env := Env{}
+	viper.AutomaticEnv()
+	viper.SetDefault("APP_ENV", "dev")
+
+	bindEnvVariables()
+
+	err := viper.Unmarshal(&env)
+	if err != nil {
+		log.Fatal("Environment can't be loaded:", err)
+	}
+
+	switch env.Environment {
+	case "dev":
+		fmt.Println("You're running your application in development mode")
+	case "prod":
+		fmt.Println("You're running your application in production mode")
+	default:
+		log.Fatalf(
+			"Unknown environment: %s. Please set APP_ENV to 'dev' or 'prod'",
+			env.Environment,
+		)
+	}
+
+	env.DBUrl = fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		env.DBUsername,
+		env.DBPassword,
+		env.DBHost,
+		env.DBPort,
+		env.DBName,
+		env.SSLMode,
+	)
+
+	if env.Environment == "dev" {
+		log.Println("The App is running in development mode")
+	}
+
+	return &env
+}
+
+// viper.AutomaticEnv() only automatically picks up environment variables if their keys match exactly —
+// and by default, Viper expects the struct field names, not the mapstructure tags.
+// But Viper doesn't automatically know to use the mapstructure keys for env lookup.
+func bindEnvVariables() {
+	vars := []string{
+		"APP_ENV",
+		"PORT",
+		"DB_HOST",
+		"DB_PORT",
+		"DB_DATABASE",
+		"DB_USERNAME",
+		"DB_PASSWORD",
+		"DB_SCHEMA",
+		"SSL_MODE",
+	}
+
+	for _, key := range vars {
+		if err := viper.BindEnv(key); err != nil {
+			log.Fatalf("Failed to bind environment variable %s: %v", key, err)
+		}
+	}
+}
