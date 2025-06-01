@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-contrib/cors"
+	"afrad-api/internal/middleware"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/coder/websocket"
@@ -14,16 +15,9 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := gin.Default()
-
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Add your frontend URL
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true, // Enable cookies/auth
-	}))
+	r.Use(middleware.SetupCors())
 
 	r.GET("/", s.HelloWorldHandler)
-	r.GET("/health", s.healthHandler)
 	r.GET("/websocket", s.websocketHandler)
 
 	return r
@@ -34,10 +28,6 @@ func (s *Server) HelloWorldHandler(c *gin.Context) {
 	resp["message"] = "Hello World"
 
 	c.JSON(http.StatusOK, resp)
-}
-
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
 }
 
 func (s *Server) websocketHandler(c *gin.Context) {
