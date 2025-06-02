@@ -27,12 +27,92 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	auth := e.Group("/auth")
+	{
+		auth.POST("/register")
+		auth.POST("/verify-phone-number")
+		auth.POST("/resend-verification-otp")
+		auth.POST("/login")
+		auth.POST("/reset-password")
+		auth.POST("/reset-password/confirm")
+		auth.POST("/refresh-tokens")
+	}
+
+	products := e.Group("/products")
+	{
+		products.GET("")
+		products.GET("/:id")
+		products.GET("/categories")
+	}
 }
 
 func (s *Server) registerUserRoutes(e *gin.Engine) {
+	user := e.Group("/user")
+	{
+		user.GET("")
+		user.PUT("")
+		user.DELETE("")
+		user.POST("/review")
+		user.PUT("/review")
+		user.GET("/review")
+		user.PATCH("/user/notificatoin-preferences")
+		user.POST("/logout")
+		user.POST("/logout-all")
+	}
+
+	cart := e.Group("/cart")
+	{
+		cart.GET("")
+		cart.POST("/item")
+		cart.PATCH("/:id")
+		cart.DELETE("/:id")
+	}
+
+	wishlist := e.Group("/wishlist")
+	{
+		wishlist.GET("")
+		wishlist.POST("/:id")
+		wishlist.DELETE("/:id")
+	}
+
+	orders := e.Group("/orders")
+	{
+		orders.GET("")
+		orders.POST("")
+		orders.GET("/:id")
+		orders.PATCH("/:id/cancel")
+	}
 }
 
 func (s *Server) registerAdminRoutes(e *gin.Engine) {
+	admin := e.Group("/admin")
+
+	product := admin.Group("/product")
+	{
+		product.PUT("/:id")
+		product.DELETE("/:id")
+		product.POST("")
+	}
+
+	category := admin.Group("/category")
+	{
+		category.POST("")
+		category.PATCH("/:id")
+		category.DELETE("/:id")
+	}
+
+	discount := admin.Group("/discounts")
+	{
+		discount.POST("/product")
+		discount.POST("/variant")
+		discount.GET("") // ??
+		discount.PUT("/:id")
+		discount.DELETE("/:id")
+	}
+
+	orders := admin.Group("/orders")
+	{
+		orders.GET("")
+	}
 }
 
 func (s *Server) websocketHandler(c *gin.Context) {
