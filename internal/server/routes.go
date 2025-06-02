@@ -13,20 +13,26 @@ import (
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	r := gin.Default()
-	r.Use(middleware.SetupCors())
+	engine := gin.Default()
+	engine.Use(middleware.SetupCors())
 
-	r.GET("/", s.HelloWorldHandler)
-	r.GET("/websocket", s.websocketHandler)
+	engine.GET("/websocket", s.websocketHandler)
 
-	return r
+	s.registerPublicRoutes(engine)
+	s.registerUserRoutes(engine)
+	s.registerAdminRoutes(engine)
+
+	return engine
 }
 
-func (s *Server) HelloWorldHandler(c *gin.Context) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
+func (s *Server) registerPublicRoutes(e *gin.Engine) {
+	auth := e.Group("/auth")
+}
 
-	c.JSON(http.StatusOK, resp)
+func (s *Server) registerUserRoutes(e *gin.Engine) {
+}
+
+func (s *Server) registerAdminRoutes(e *gin.Engine) {
 }
 
 func (s *Server) websocketHandler(c *gin.Context) {
