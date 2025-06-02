@@ -15,4 +15,6 @@
   - [ ] We'll expose functions through the Service interface
 - [ ] Write all expected routes in the routes.go file
 
-## Endpoints
+## API Features
+
+- [ ] We need pagination on a lot of endpoints, try to make a reusable function or a struct to make implementing pagination more simple.

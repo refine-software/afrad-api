@@ -50,12 +50,12 @@
 
 ## Category
 
-| DONE | Method   | Endpoint              | Description                     |
-| ---- | -------- | --------------------- | ------------------------------- |
-| ❌   | `GET`    | `/categories`         | Fetch all categories            |
-| ❌   | `POST`   | `/admin/category/:id` | Add a new category (admin only) |
-| ❌   | `PATCH`  | `/admin/category/:id` | Update category (admin only)    |
-| ❌   | `DELETE` | `/admin/category/:id` | Delete category (admin only)    |
+| DONE | Method   | Endpoint               | Description                     |
+| ---- | -------- | ---------------------- | ------------------------------- |
+| ❌   | `GET`    | `/products/categories` | Fetch all categories            |
+| ❌   | `POST`   | `/admin/category`      | Add a new category (admin only) |
+| ❌   | `PATCH`  | `/admin/category/:id`  | Update category (admin only)    |
+| ❌   | `DELETE` | `/admin/category/:id`  | Delete category (admin only)    |
 
 ## Cart
 
@@ -76,13 +76,13 @@
 
 ## Order
 
-| DONE | Method | Endpoint            | Description                   |
-| ---- | ------ | ------------------- | ----------------------------- |
-| ❌   | `GET`  | `/admin/orders`     | Fetch all orders (Admin only) |
-| ❌   | `GET`  | `/orders`           | Fetch all orders              |
-| ❌   | `GET`  | `/order/:id`        | Fetch a specific order        |
-| ❌   | `POST` | `/order`            | Add order (checkout)          |
-| ❌   | `POST` | `/order/:id/cancel` | Cancel a specific order       |
+| DONE | Method  | Endpoint            | Description                   |
+| ---- | ------- | ------------------- | ----------------------------- |
+| ❌   | `GET`   | `/admin/orders`     | Fetch all orders (Admin only) |
+| ❌   | `GET`   | `/orders`           | Fetch all orders              |
+| ❌   | `GET`   | `/order/:id`        | Fetch a specific order        |
+| ❌   | `POST`  | `/order`            | Add order (checkout)          |
+| ❌   | `PATCH` | `/order/:id/cancel` | Cancel a specific order       |
 
 ## Discount
 
