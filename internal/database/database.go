@@ -14,6 +14,7 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
+	LocalAuth() LocalAuthRepository
 	Oauth() OAuthRepository
 	User() UserRepository
 	Pool() *pgxpool.Pool
@@ -28,9 +29,10 @@ type Querier interface {
 }
 
 type service struct {
-	oAuthRepo OAuthRepository
-	userRepo  UserRepository
-	db        *pgxpool.Pool
+	localAuthRepo LocalAuthRepository
+	oAuthRepo     OAuthRepository
+	userRepo      UserRepository
+	db            *pgxpool.Pool
 }
 
 var dbInstance *service
@@ -54,9 +56,10 @@ func New(env *config.Env) Service {
 	}
 
 	dbInstance = &service{
-		db:        pool,
-		userRepo:  NewUserRepository(),
-		oAuthRepo: NewOAuthRepository(),
+		db:            pool,
+		userRepo:      NewUserRepository(),
+		oAuthRepo:     NewOAuthRepository(),
+		localAuthRepo: NewLocalAuthRepository(),
 	}
 
 	return dbInstance
@@ -68,6 +71,10 @@ func (s *service) User() UserRepository {
 
 func (s *service) Oauth() OAuthRepository {
 	return s.oAuthRepo
+}
+
+func (s *service) LocalAuth() LocalAuthRepository {
+	return s.localAuthRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
