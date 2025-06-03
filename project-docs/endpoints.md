@@ -12,7 +12,7 @@
 | ---- | ------ | ------------------------------- | ------------------------------------------- |
 | ❌   | `POST` | `/auth/register`                | Register a new user                         |
 | ❌   | `POST` | `/auth/verify-phone-number`     | Verify phone number to activate account     |
-| ❌   | `POST` | `/auth/resend-verification-otp` | resend verification otp to activate account |
+| ❌   | `POST` | `/auth/resend-verification-otp` | Resend verification otp to activate account |
 | ❌   | `POST` | `/auth/login`                   | Login and receive JWT                       |
 | ❌   | `POST` | `/auth/reset-password`          | Request a password reset                    |
 | ❌   | `POST` | `/auth/reset-password/confirm`  | Set a new password                          |
@@ -20,9 +20,13 @@
 
 ### Oauth
 
-| DONE | Method | Endpoint | Description |
-| ---- | ------ | -------- | ----------- |
-| ❌   | `POST` | `/`      |             |
+| DONE | Method | Endpoint                 | Description                                                                                                                  |
+| ---- | ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| ❌   | `GET`  | `/oauth/google/login`    | Redirects the user to Google's OAuth 2.0 authorization URL with PKCE support                                                 |
+| ❌   | `GET`  | `/oauth/google/callback` | Handles Google's redirect with the auth code, exchanges it for tokens, verifies ID token, and signs in or registers the user |
+| ❌   | `POST` | `/oauth/logout`          | Logs the user out by revoking or deleting your app's session or JWT                                                          |
+| ❌   | `GET`  | `/oauth/me`              | Returns the currently authenticated user's information using your app's session or JWT                                       |
+| ❌   | `POST` | `/oauth/refresh`         | Issues a new JWT access token using a valid refresh token (if you implement refresh logic)                                   |
 
 ## User
 
