@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
@@ -12,15 +14,23 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
-	AuthProvider() AuthProviderRepository
+	Oauth() OAuthRepository
 	User() UserRepository
+	Pool() *pgxpool.Pool
+	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
 	Close()
 }
 
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
 type service struct {
-	authProviderRepo AuthProviderRepository
-	userRepo         UserRepository
-	db               *pgxpool.Pool
+	oAuthRepo OAuthRepository
+	userRepo  UserRepository
+	db        *pgxpool.Pool
 }
 
 var dbInstance *service
@@ -44,9 +54,9 @@ func New(env *config.Env) Service {
 	}
 
 	dbInstance = &service{
-		db:               pool,
-		userRepo:         NewUserRepository(pool),
-		authProviderRepo: NewAuthProviderRepo(pool),
+		db:        pool,
+		userRepo:  NewUserRepository(),
+		oAuthRepo: NewOAuthRepository(),
 	}
 
 	return dbInstance
@@ -56,8 +66,33 @@ func (s *service) User() UserRepository {
 	return s.userRepo
 }
 
-func (s *service) AuthProvider() AuthProviderRepository {
-	return s.authProviderRepo
+func (s *service) Oauth() OAuthRepository {
+	return s.oAuthRepo
+}
+
+func (s *service) Pool() *pgxpool.Pool {
+	return s.db
+}
+
+func (s *service) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback(ctx)
+			panic(p)
+		}
+	}()
+
+	err = fn(tx)
+	if err != nil {
+		_ = tx.Rollback(ctx)
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (s *service) Close() {

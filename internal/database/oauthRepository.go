@@ -2,20 +2,23 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/refine-software/afrad-api/internal/models"
 )
 
-type AuthProviderRepository interface {
-	Create(ctx *gin.Context)
+type OAuthRepository interface {
+	Create(ctx *gin.Context, db Querier, authProvider *models.AuthProvider) error
 }
 
-type authProviderRepo struct {
-	db *pgxpool.Pool
+type oAuthRepo struct{}
+
+func NewOAuthRepository() OAuthRepository {
+	return &oAuthRepo{}
 }
 
-func NewAuthProviderRepo(db *pgxpool.Pool) AuthProviderRepository {
-	return &authProviderRepo{db}
-}
-
-func (a *authProviderRepo) Create(ctx *gin.Context) {
+func (a *oAuthRepo) Create(
+	ctx *gin.Context,
+	db Querier,
+	authProvider *models.AuthProvider,
+) error {
+	return nil
 }
