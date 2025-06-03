@@ -5,30 +5,36 @@ CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'del
 CREATE TABLE users (
 	id SERIAL PRIMARY KEY,
 	first_name VARCHAR NOT NULL,
-	last_name VARCHAR NOT NULL,
+	last_name VARCHAR,
 	image TEXT,
-	phone_number VARCHAR NOT NULL UNIQUE,
 	email varchar UNIQUE,
-	password_hash TEXT NOT NULL,
 	role role,
-	is_phone_verified BOOLEAN DEFAULT false,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE auth_providers (
-	id SERIAL PRIMARY KEY,
+CREATE TABLE local_auth (
+	user_id INT REFERENCES users(id) ON DELETE CASCADE,
+	phone_number VARCHAR NOT NULL UNIQUE,
+	is_phone_verified BOOLEAN DEFAULT false,
+	password_hash TEXT NOT NULL,
+
+	PRIMARY KEY (user_id)
+)
+
+CREATE TABLE oauth (
+	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	provider VARCHAR NOT NULL,
 	provider_id UUID UNIQUE,
-	
-	user_id INT NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+	PRIMARY KEY (user_id)
 );
 
 CREATE TABLE sessions (
 	id SERIAL PRIMARY KEY,
 	revoked BOOLEAN DEFAULT false,
 	user_agent varchar UNIQUE NOT NULL,
+	refresh_token TEXT NOT NULL,
 	expires_at TIMESTAMP NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -65,6 +71,11 @@ CREATE TABLE categories (
 	parent_id INT REFERENCES categories(id)
 );
 
+CREATE TABLE brands(
+	id SERIAL PRIMARY KEY,
+	brand VARCHAR UNIQUE NOT NULL
+);
+
 CREATE TABLE products (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR UNIQUE NOT NULL,
@@ -74,12 +85,8 @@ CREATE TABLE products (
 	
 	brand_id int NOT NULL,
 	product_category INT NOT NULL,	
-	FOREIGN KEY (product_category) REFERENCES categories(id) ON DELETE CASCADE
+	FOREIGN KEY (product_category) REFERENCES categories(id) ON DELETE CASCADE,
 	FOREIGN KEY (brand_id) REFERENCES brands(id) 
-);
-CREATE TABLE brands(
-	id SERIAL PRIMARY KEY,
-	brand VARCHAR UNIQUE NOT NULL
 );
 
 CREATE TABLE sizes (
