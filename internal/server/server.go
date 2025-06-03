@@ -8,6 +8,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/refine-software/afrad-api/config"
+	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/s3"
 )
@@ -28,6 +29,8 @@ func NewServer() *http.Server {
 		log.Println("couldn't create s3 storage")
 		log.Fatalln(err)
 	}
+
+	auth.InitOauth(env)
 
 	NewServer := &Server{
 		port: env.Port,

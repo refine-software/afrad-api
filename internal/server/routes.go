@@ -26,6 +26,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) registerPublicRoutes(e *gin.Engine) {
+	oauth := e.Group("/oauth")
+	{
+		oauth.GET("/google/login", s.loginWithGoogle)
+		oauth.GET("/google/callback", s.googleCallback)
+		oauth.POST("/logout")
+		oauth.POST("/refresh")
+		oauth.GET("/me")
+	}
+
 	auth := e.Group("/auth")
 	{
 		auth.POST("/register")

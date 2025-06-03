@@ -27,6 +27,11 @@ type Env struct {
 	S3SecretAccessKey string `mapstructure:"S3_SECRET_ACCESS_KEY"`
 	S3Region          string `mapstructure:"S3_REGION"`
 	S3Bucket          string `mapstructure:"S3_BUCKET"`
+
+	// Oauth
+	SessionKey         string `mapstructure:"SESSION_KEY"`
+	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
+	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
 }
 
 func NewEnv() *Env {
@@ -90,6 +95,10 @@ func bindEnvVariables() {
 		"S3_SECRET_ACCESS_KEY",
 		"S3_REGION",
 		"S3_BUCKET",
+		// Oauth
+		"SESSION_KEY",
+		"GOOGLE_CLIENT_ID",
+		"GOOGLE_CLIENT_SECRET",
 	}
 
 	for _, key := range vars {
