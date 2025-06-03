@@ -29,10 +29,13 @@ type Querier interface {
 }
 
 type service struct {
-	localAuthRepo LocalAuthRepository
-	oAuthRepo     OAuthRepository
-	userRepo      UserRepository
-	db            *pgxpool.Pool
+	phoneVerificationCodeRepo PhoneVerificationCodeRepository
+	passwordResetRepo         PasswordResetRepository
+	sessionRepo               SessionRepository
+	localAuthRepo             LocalAuthRepository
+	oAuthRepo                 OAuthRepository
+	userRepo                  UserRepository
+	db                        *pgxpool.Pool
 }
 
 var dbInstance *service
@@ -56,10 +59,13 @@ func New(env *config.Env) Service {
 	}
 
 	dbInstance = &service{
-		db:            pool,
-		userRepo:      NewUserRepository(),
-		oAuthRepo:     NewOAuthRepository(),
-		localAuthRepo: NewLocalAuthRepository(),
+		db:                        pool,
+		userRepo:                  NewUserRepository(),
+		oAuthRepo:                 NewOAuthRepository(),
+		localAuthRepo:             NewLocalAuthRepository(),
+		sessionRepo:               NewSessionRepository(),
+		passwordResetRepo:         NewPasswordResetRepository(),
+		phoneVerificationCodeRepo: NewPhoneVerificationCodeRepository(),
 	}
 
 	return dbInstance
@@ -75,6 +81,18 @@ func (s *service) Oauth() OAuthRepository {
 
 func (s *service) LocalAuth() LocalAuthRepository {
 	return s.localAuthRepo
+}
+
+func (s *service) Session() SessionRepository {
+	return s.sessionRepo
+}
+
+func (s *service) PasswordReset() PasswordResetRepository {
+	return s.passwordResetRepo
+}
+
+func (s *service) PhoneVerificationCode() PhoneVerificationCodeRepository {
+	return s.phoneVerificationCodeRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
