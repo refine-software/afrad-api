@@ -2,9 +2,8 @@ package models
 
 import "github.com/google/uuid"
 
-type AuthProvider struct {
-	ID         int
+type OAuth struct {
+	UserID     int
 	Provider   string
 	ProviderID uuid.UUID
-	UserID     int
 }

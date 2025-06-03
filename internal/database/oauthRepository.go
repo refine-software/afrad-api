@@ -6,7 +6,7 @@ import (
 )
 
 type OAuthRepository interface {
-	Create(ctx *gin.Context, db Querier, authProvider *models.AuthProvider) error
+	Create(ctx *gin.Context, db Querier, authProvider *models.OAuth) error
 }
 
 type oAuthRepo struct{}
@@ -18,7 +18,7 @@ func NewOAuthRepository() OAuthRepository {
 func (a *oAuthRepo) Create(
 	ctx *gin.Context,
 	db Querier,
-	authProvider *models.AuthProvider,
+	authProvider *models.OAuth,
 ) error {
 	return nil
 }
