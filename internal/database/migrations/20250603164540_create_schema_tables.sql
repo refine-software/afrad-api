@@ -26,7 +26,7 @@ CREATE TABLE local_auth (
 CREATE TABLE oauth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	provider VARCHAR NOT NULL,
-	provider_id UUID UNIQUE,
+	provider_id UUID UNIQUE NOT NULL,
 
 	PRIMARY KEY (user_id)
 );
