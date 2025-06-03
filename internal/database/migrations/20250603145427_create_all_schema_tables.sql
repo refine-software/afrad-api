@@ -1,5 +1,4 @@
 -- +goose Up
-
 CREATE TYPE role AS ENUM ('admin', 'user');
 
 CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'delivered', 'cancelled');
@@ -7,30 +6,36 @@ CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'del
 CREATE TABLE users (
 	id SERIAL PRIMARY KEY,
 	first_name VARCHAR NOT NULL,
-	last_name VARCHAR NOT NULL,
+	last_name VARCHAR,
 	image TEXT,
-	phone_number VARCHAR NOT NULL UNIQUE,
 	email varchar UNIQUE,
-	password_hash TEXT NOT NULL,
 	role role,
-	is_phone_verified BOOLEAN DEFAULT false,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE auth_providers (
-	id SERIAL PRIMARY KEY,
+CREATE TABLE local_auth (
+	user_id INT REFERENCES users(id) ON DELETE CASCADE,
+	phone_number VARCHAR NOT NULL UNIQUE,
+	is_phone_verified BOOLEAN DEFAULT false,
+	password_hash TEXT NOT NULL,
+
+	PRIMARY KEY (user_id)
+);
+
+CREATE TABLE oauth (
+	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	provider VARCHAR NOT NULL,
 	provider_id UUID UNIQUE,
-	
-	user_id INT NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+	PRIMARY KEY (user_id)
 );
 
 CREATE TABLE sessions (
 	id SERIAL PRIMARY KEY,
 	revoked BOOLEAN DEFAULT false,
 	user_agent varchar UNIQUE NOT NULL,
+	refresh_token TEXT NOT NULL,
 	expires_at TIMESTAMP NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -79,7 +84,7 @@ CREATE TABLE products (
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	
-	brand_id INT NOT NULL,
+	brand_id int NOT NULL,
 	product_category INT NOT NULL,	
 	FOREIGN KEY (product_category) REFERENCES categories(id) ON DELETE CASCADE,
 	FOREIGN KEY (brand_id) REFERENCES brands(id) 
@@ -232,10 +237,6 @@ CREATE TABLE variant_discount (
 	FOREIGN KEY (discount_id) REFERENCES discounts(id),
 	FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
-
-
-
-
 -- +goose Down
 DROP TABLE cart_items;
 DROP TABLE carts;
@@ -255,7 +256,9 @@ DROP TABLE brands;
 DROP TABLE categories;
 DROP TABLE phone_verification_codes;
 DROP TABLE sessions;
-DROP TABLE auth_providers;
+DROP TABLE oauth;
 DROP TABLE password_resets;
+DROP TABLE local_auth;
 DROP TABLE users;
-
+DROP TYPE IF EXISTS order_status;
+DROP TYPE IF EXISTS role;
