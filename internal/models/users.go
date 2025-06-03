@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-type Role string
-
 type User struct {
 	ID              int
 	FirstName       string

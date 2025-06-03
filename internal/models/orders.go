@@ -2,8 +2,6 @@ package models
 
 import "time"
 
-type OrderStatus string
-
 type Order struct {
 	ID          int
 	Town        string
