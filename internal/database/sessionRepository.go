@@ -6,8 +6,20 @@ import (
 )
 
 type SessionRepository interface {
-	Get(ctx *gin.Context, db Querier, id int) (models.Session, error)
+	// Get a single session by the id
+	GetByUserIDAndUserAgent(
+		ctx *gin.Context,
+		db Querier,
+		userID int32,
+		userAgent string,
+	) (models.Session, error)
+
+	// This method will create a session, the following columns are required:
+	// user_id, user_agent, refresh_token, expires_at.
 	Create(ctx *gin.Context, db Querier, sess *models.Session) error
+	// Update the user session with the following columns:
+	// revoked, refresh_token, expires_at.
+	// the session will be updated using its id.
 	Update(ctx *gin.Context, db Querier, sess *models.Session) error
 }
 
@@ -17,16 +29,20 @@ func NewSessionRepository() SessionRepository {
 	return &sessionRepo{}
 }
 
-// Get a single session by the id
-func (sessionRepo *sessionRepo) Get(ctx *gin.Context, db Querier, id int) (models.Session, error) {
+func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
+	ctx *gin.Context,
+	db Querier,
+	userID int32,
+	userAgent string,
+) (models.Session, error) {
 	query := `
 	SELECT id, revoked, user_agent, refresh_token, expires_at, created_at, updated_at, user_id 
 	FROM sessions 
-	WHERE id = $1
+	WHERE user_id = $1 AND user_agent = $2
 	`
 
 	var s models.Session
-	err := db.QueryRow(ctx, query, id).Scan(
+	err := db.QueryRow(ctx, query, userID, userAgent).Scan(
 		&s.ID,
 		&s.Revoked,
 		&s.UserAgent,
@@ -40,8 +56,6 @@ func (sessionRepo *sessionRepo) Get(ctx *gin.Context, db Querier, id int) (model
 	return s, Parse(err)
 }
 
-// This method will create a session, the following columns are required:
-// user_id, user_agent, refresh_token, expires_at.
 func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) error {
 	query := `
 	INSERT INTO sessions(user_id, user_agent, refresh_token, expires_at)
