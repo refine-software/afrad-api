@@ -1,9 +1,9 @@
 package database
 
 import (
-	"database/sql"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -21,7 +21,7 @@ var (
 
 var (
 	stringDataRightTruncationCode = "22001" // A string is longer than the column allows.
-	invalidTextRepresentation     = "22P02" // PostgreSQL can’t cast a string to the target data type.
+	invalidTextRepresentationCode = "22P02" // PostgreSQL can’t cast a string to the target data type.
 	notNullViolationCode          = "23502"
 	foreignKeyViolationCode       = "23503"
 	uniqueViolationCode           = "23505"
@@ -29,7 +29,11 @@ var (
 )
 
 func Parse(err error) error {
-	if errors.Is(err, sql.ErrNoRows) {
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrNotFound
 	}
 
@@ -46,15 +50,11 @@ func Parse(err error) error {
 			return ErrCheckViolation
 		case stringDataRightTruncationCode:
 			return ErrStringTooLong
-		case invalidTextRepresentation:
+		case invalidTextRepresentationCode:
 			return ErrInvalidFormat
 		default:
 			return ErrUnknown
 		}
-	}
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
 	}
 
 	return err
