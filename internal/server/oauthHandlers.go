@@ -2,9 +2,12 @@ package server
 
 import (
 	"errors"
-	"slices"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
@@ -19,91 +22,157 @@ func (s *Server) loginWithGoogle(c *gin.Context) {
 	gothic.BeginAuthHandler(c.Writer, c.Request)
 }
 
+type upsertResult struct {
+	User     *models.User
+	IsNew    bool
+	APIError *utils.APIError
+	Err      error
+}
+
+func (s *Server) upsertUser(
+	c *gin.Context,
+	db database.Querier,
+	user goth.User,
+	role models.Role,
+) (u *models.User, resultErr upsertResult) {
+	userRepo := s.db.User()
+	oauthRepo := s.db.Oauth()
+
+	u, err := userRepo.Get(c, db, user.Email)
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		return nil, upsertResult{
+			APIError: utils.MapDBErrorToAPIError(err, "user"),
+			Err:      err,
+		}
+	}
+
+	if u != nil {
+		// update user
+		u.FirstName = getNameFallback(user.FirstName, user.Name)
+		u.LastName = user.LastName
+		u.Image = user.AvatarURL
+		u.Role = role
+
+		err = userRepo.Update(c, db, u)
+		if err != nil {
+			return nil, upsertResult{
+				APIError: utils.MapDBErrorToAPIError(err, "user"),
+				Err:      err,
+			}
+		}
+		return u, upsertResult{}
+	}
+
+	// create user
+	u = &models.User{
+		FirstName: getNameFallback(user.FirstName, user.Name),
+		LastName:  user.LastName,
+		Image:     user.AvatarURL,
+		Email:     user.Email,
+		Role:      role,
+	}
+	userID, err := userRepo.Create(c, db, u)
+	if err != nil {
+		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(err, "user"), Err: err}
+	}
+	u.ID = int32(userID)
+
+	err = oauthRepo.Create(c, db, &models.OAuth{
+		UserID:     u.ID,
+		Provider:   user.Provider,
+		ProviderID: user.UserID,
+	})
+	if err != nil {
+		return nil, upsertResult{
+			APIError: utils.MapDBErrorToAPIError(err, "oauth"),
+			Err:      err,
+		}
+	}
+
+	return u, upsertResult{}
+}
+
+type oauthRes struct {
+	AccessToken string      `json:"accessToken"`
+	User        models.User `json:"user"`
+}
+
 func (s *Server) googleCallback(c *gin.Context) {
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
 		utils.Fail(c, utils.ErrUnauthorized, err)
 		return
 	}
-	// fmt.Println("User ID:", user.UserID)
-	// fmt.Println("User Avatar:", user.AvatarURL)
-	// fmt.Println("User Email:", user.Email)
-	// fmt.Println("User FirstName:", user.FirstName)
-	// fmt.Println("User LastName:", user.LastName)
-	// fmt.Println("User Name:", user.Name)
-	// fmt.Println("Provider:", user.Provider)
 
-	// Lookup user
-	userRepo := s.db.User()
+	sessionRepo := s.db.Session()
 	db := s.db.Pool()
 
-	u, err := userRepo.GetUserByEmail(c, db, user.Email)
-	if err != nil && !errors.Is(err, database.ErrNotFound) {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(c, apiErr, err)
+	u, upsertErr := s.upsertUser(c, db, user, getUserRole(user.Email))
+	if upsertErr.Err != nil || u == nil {
+		utils.Fail(c, upsertErr.APIError, upsertErr.Err)
 		return
 	}
 
-	admins := []string{
-		"ali93456@gmail.com",
-		"bruhgg596@gmail.com",
-	}
-	userRole := models.RoleUser
-	if slices.Contains(admins, user.Email) {
-		userRole = models.RoleAdmin
+	userIDStr := strconv.Itoa(int(u.ID))
+	accessToken, refreshToken, err := s.generateTokens(userIDStr, string(u.Role))
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
 	}
 
-	// if user exists update it
-	if u != nil {
-		if user.FirstName == "" && user.Name != "" {
-			u.FirstName = user.Name
-		} else {
-			u.FirstName = user.FirstName
+	// hash refresh token
+	hashedRefresh, err := utils.HashToken(refreshToken, s.env.HashSecret)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	var session models.Session
+	session, err = sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+	sessExpTime := time.Now().Add((time.Hour * 24) * time.Duration(s.env.RefreshTokenExpInDays))
+	if errors.Is(err, database.ErrNotFound) {
+		session = models.Session{
+			UserID:       u.ID,
+			RefreshToken: hashedRefresh,
+			ExpiresAt:    sessExpTime,
+			UserAgent:    c.Request.UserAgent(),
 		}
-		u.LastName = user.LastName
-		u.Image = user.AvatarURL
-		u.Role = userRole
 
-		err = userRepo.UpdateUser(c, db, u)
+		err = sessionRepo.Create(c, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "user")
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
 			utils.Fail(c, apiErr, err)
 			return
 		}
 	} else {
-		// if user doesn't exists create it
-		u = &models.User{}
-		if user.FirstName == "" && user.Name != "" {
-			u.FirstName = user.Name
-		} else {
-			u.FirstName = user.FirstName
-		}
-		u.LastName = user.LastName
-		u.Image = user.AvatarURL
-		u.Role = userRole
-		u.Email = user.Email
-
-		err := userRepo.CreateUser(c, db, u)
+		session.Revoked = false
+		session.RefreshToken = hashedRefresh
+		session.ExpiresAt = sessExpTime
+		err = sessionRepo.Update(c, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "user")
-			utils.Fail(c, apiErr, err)
-			return
-		}
-
-		oauthRepo := s.db.Oauth()
-		err = oauthRepo.Create(c, db, &models.OAuth{
-			UserID:     u.ID,
-			Provider:   user.Provider,
-			ProviderID: user.UserID,
-		})
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "oauth")
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
 			utils.Fail(c, apiErr, err)
 			return
 		}
 	}
 
-	// Generate access and refresh token
-	// Create a session for the user
-	// Use a transaction to do all of these db calls
+	c.SetCookie(
+		"refresh_token",
+		refreshToken,
+		int((time.Hour * 24 * time.Duration(s.env.RefreshTokenExpInDays)).Seconds()),
+		"/",
+		"",
+		false,
+		true,
+	)
+
+	c.JSON(http.StatusOK, oauthRes{
+		AccessToken: accessToken,
+		User:        *u,
+	})
 }
