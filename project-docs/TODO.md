@@ -6,7 +6,7 @@
 - [x] Setup postgres DB using "pgx.pool" instead of "database/sql" package.
 - [x] Setup viper for environment variables.
 - [x] Setup S3 for image storing.
-  - [ ] Create a bucket using aws and add the required info.
+  - [x] Create a bucket using aws and add the required info.
 - [x] Write the project endpoints docs.
 - [x] Database and models structure, we need to decide what structure will we use, then implement it.
   - [x] Make sure to expose custom database errors, to make error handling easier in the handlers.
@@ -21,4 +21,4 @@
 
 ## Database
 
-- [ ] Write all tables as structs (models)
+- [x] Write all tables as structs (models)
