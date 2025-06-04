@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 
 	"github.com/gin-gonic/gin"
@@ -26,13 +25,13 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, utils.ErrUnauthorized, err)
 		return
 	}
-	fmt.Println("User ID:", user.UserID)
-	fmt.Println("User Avatar:", user.AvatarURL)
-	fmt.Println("User Email:", user.Email)
-	fmt.Println("User FirstName:", user.FirstName)
-	fmt.Println("User LastName:", user.LastName)
-	fmt.Println("User Name:", user.Name)
-	fmt.Println("Provider:", user.Provider)
+	// fmt.Println("User ID:", user.UserID)
+	// fmt.Println("User Avatar:", user.AvatarURL)
+	// fmt.Println("User Email:", user.Email)
+	// fmt.Println("User FirstName:", user.FirstName)
+	// fmt.Println("User LastName:", user.LastName)
+	// fmt.Println("User Name:", user.Name)
+	// fmt.Println("Provider:", user.Provider)
 
 	// Lookup user
 	userRepo := s.db.User()
@@ -56,7 +55,11 @@ func (s *Server) googleCallback(c *gin.Context) {
 
 	// if user exists update it
 	if u != nil {
-		u.FirstName = user.FirstName
+		if user.FirstName == "" && user.Name != "" {
+			u.FirstName = user.Name
+		} else {
+			u.FirstName = user.FirstName
+		}
 		u.LastName = user.LastName
 		u.Image = user.AvatarURL
 		u.Role = userRole
@@ -70,7 +73,11 @@ func (s *Server) googleCallback(c *gin.Context) {
 	} else {
 		// if user doesn't exists create it
 		u = &models.User{}
-		u.FirstName = user.FirstName
+		if user.FirstName == "" && user.Name != "" {
+			u.FirstName = user.Name
+		} else {
+			u.FirstName = user.FirstName
+		}
 		u.LastName = user.LastName
 		u.Image = user.AvatarURL
 		u.Role = userRole
@@ -95,4 +102,8 @@ func (s *Server) googleCallback(c *gin.Context) {
 			return
 		}
 	}
+
+	// Generate access and refresh token
+	// Create a session for the user
+	// Use a transaction to do all of these db calls
 }
