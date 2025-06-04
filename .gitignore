@@ -28,7 +28,10 @@ tmp/
 # Project build
 main
 *templ.go
+afrad
 
 # OS X generated file
 .DS_Store
 
+# swagger docs
+docs/
