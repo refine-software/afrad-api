@@ -21,4 +21,9 @@
 
 ## Database
 
-- [x] Write all tables as structs (models)
+- [x] Write all tables as structs (models).
+
+## Bugs/Issues
+
+- [ ] session management is broken, the user is not reusing a session and we're not removing them, so the number of session will keep on growing.
+- [ ]
