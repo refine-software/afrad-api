@@ -33,7 +33,7 @@ CREATE TABLE oauth (
 CREATE TABLE sessions (
 	id SERIAL PRIMARY KEY,
 	revoked BOOLEAN DEFAULT false,
-	user_agent varchar UNIQUE NOT NULL,
+	user_agent varchar NOT NULL,
 	refresh_token TEXT NOT NULL,
 	expires_at TIMESTAMP NOT NULL,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -41,6 +41,7 @@ CREATE TABLE sessions (
 	
 	user_id INT NOT NULL,
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+	UNIQUE(user_id, user_agent)
 );
 
 CREATE TABLE phone_verification_codes (
