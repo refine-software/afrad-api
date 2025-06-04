@@ -17,6 +17,7 @@ type Service interface {
 	LocalAuth() LocalAuthRepository
 	Oauth() OAuthRepository
 	User() UserRepository
+	Session() SessionRepository
 	Pool() *pgxpool.Pool
 	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
 	Close()
