@@ -11,7 +11,7 @@ type PasswordResetRepository interface {
 type passwordResetRepo struct{}
 
 func NewPasswordResetRepository() PasswordResetRepository {
-	return &sessionRepo{}
+	return &passwordResetRepo{}
 }
 
 func (s *passwordResetRepo) Create(ctx *gin.Context, db Querier) error {
