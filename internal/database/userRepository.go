@@ -6,9 +6,14 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(ctx *gin.Context, db Querier, user *models.User) error
-	GetUserByEmail(ctx *gin.Context, db Querier, email string) (*models.User, error)
-	UpdateUser(ctx *gin.Context, db Querier, u *models.User) error
+	// this method will create the user, with the following data:
+	// first_name, last_name, image, email, role.
+	Create(ctx *gin.Context, db Querier, user *models.User) (int, error)
+	// this method will update the following user columns:
+	// first_name, last_name, image, role.
+	// based on the user id.
+	Update(ctx *gin.Context, db Querier, u *models.User) error
+	Get(ctx *gin.Context, db Querier, email string) (*models.User, error)
 }
 
 type userRepo struct{}
@@ -17,32 +22,29 @@ func NewUserRepository() UserRepository {
 	return &userRepo{}
 }
 
-// this method will create the user, with the following data:
-// first_name, last_name, image, email, role.
-func (r *userRepo) CreateUser(ctx *gin.Context, db Querier, u *models.User) error {
+func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, error) {
 	query := `
 	INSERT INTO users(first_name, last_name, image, email, role)
 	VALUES($1, $2, $3, $4, $5)
+	RETURNING id
 	`
 
-	_, err := db.Exec(ctx, query, u.FirstName, u.LastName, u.Image, u.Email, u.Role)
+	var id int
+	err := db.QueryRow(ctx, query, u.FirstName, u.LastName, u.Image, u.Email, u.Role).Scan(&id)
 	if err != nil {
-		return Parse(err)
+		return 0, Parse(err)
 	}
 
-	return nil
+	return id, nil
 }
 
-// this method will update the following user columns:
-// first_name, last_name, image, role.
-// based on the user id.
-func (r *userRepo) UpdateUser(ctx *gin.Context, db Querier, u *models.User) error {
+func (r *userRepo) Update(ctx *gin.Context, db Querier, u *models.User) error {
 	query := `
 	UPDATE users
 	SET first_name = $1, last_name = $2, image = $3, role = $4
 	WHERE id = $5;`
 
-	_, err := db.Exec(ctx, query, u.FirstName, u.LastName, u.Image, u.Role, u.UpdatedAt, u.ID)
+	_, err := db.Exec(ctx, query, u.FirstName, u.LastName, u.Image, u.Role, u.ID)
 	if err != nil {
 		return Parse(err)
 	}
@@ -50,18 +52,30 @@ func (r *userRepo) UpdateUser(ctx *gin.Context, db Querier, u *models.User) erro
 	return nil
 }
 
-func (r *userRepo) GetUserByEmail(
+func (r *userRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	email string,
 ) (*models.User, error) {
-	query := `SELECT * FROM users WHERE email = $1`
-	u := &models.User{}
+	query := `SELECT id, first_name, last_name, image, email, role, created_at, updated_at
+	FROM users 
+	WHERE email = $1
+	`
+	var u models.User
 
-	err := db.QueryRow(ctx, query, email).Scan(u)
+	err := db.QueryRow(ctx, query, email).Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Image,
+		&u.Email,
+		&u.Role,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
 	if err != nil {
 		return nil, Parse(err)
 	}
 
-	return u, nil
+	return &u, nil
 }
