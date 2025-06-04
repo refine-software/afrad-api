@@ -32,6 +32,15 @@ type Env struct {
 	SessionKey         string `mapstructure:"SESSION_KEY"`
 	GoogleClientID     string `mapstructure:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string `mapstructure:"GOOGLE_CLIENT_SECRET"`
+
+	// JWT
+	AccessTokenSecret     string `mapstructure:"ACCESS_TOKEN_SECRET"`
+	RefreshTokenSecret    string `mapstructure:"REFRESH_TOKEN_SECRET"`
+	AccessTokenExpInMin   int    `mapstructure:"ACCESS_TOKEN_EXP_IN_MIN"`
+	RefreshTokenExpInDays int    `mapstructure:"REFRESH_TOKEN_EXP_IN_DAYS"`
+
+	// Hash
+	HashSecret string `mapstructure:"HASHING_SECRET"`
 }
 
 func NewEnv() *Env {
@@ -99,6 +108,13 @@ func bindEnvVariables() {
 		"SESSION_KEY",
 		"GOOGLE_CLIENT_ID",
 		"GOOGLE_CLIENT_SECRET",
+		// JWT
+		"ACCESS_TOKEN_SECRET",
+		"REFRESH_TOKEN_SECRET",
+		"ACCESS_TOKEN_EXP_IN_MIN",
+		"REFRESH_TOKEN_EXP_IN_DAYS",
+		// Hashing
+		"HASHING_SECRET",
 	}
 
 	for _, key := range vars {
