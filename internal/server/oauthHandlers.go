@@ -105,7 +105,18 @@ func (s *Server) googleCallback(c *gin.Context) {
 	}
 
 	sessionRepo := s.db.Session()
-	db := s.db.Pool()
+	db, err := s.db.BeginTx(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = db.Rollback(c)
+			panic(p)
+		}
+	}()
 
 	u, upsertErr := s.upsertUser(c, db, user, getUserRole(user.Email))
 	if upsertErr.Err != nil || u == nil {
@@ -134,7 +145,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, apiErr, err)
 		return
 	}
-	sessExpTime := time.Now().Add((time.Hour * 24) * time.Duration(s.env.RefreshTokenExpInDays))
+	sessExpTime := getExpTimeAfterDays(s.env.RefreshTokenExpInDays)
 	if errors.Is(err, database.ErrNotFound) {
 		session = models.Session{
 			UserID:       u.ID,
@@ -161,18 +172,162 @@ func (s *Server) googleCallback(c *gin.Context) {
 		}
 	}
 
-	c.SetCookie(
-		"refresh_token",
-		refreshToken,
-		int((time.Hour * 24 * time.Duration(s.env.RefreshTokenExpInDays)).Seconds()),
-		"/",
-		"",
-		false,
-		true,
-	)
+	err = db.Commit(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
 
-	c.JSON(http.StatusOK, oauthRes{
+	s.setRefreshCookie(c, refreshToken)
+
+	utils.Success(c, "You have loged in successfully", oauthRes{
 		AccessToken: accessToken,
 		User:        *u,
+	})
+}
+
+type refreshTokenReq struct {
+	UserID int32 `json:"userId"`
+}
+
+type refreshTokenRes struct {
+	AccessToken string `json:"accessToken"`
+}
+
+func (s *Server) refreshTokenOauth(c *gin.Context) {
+	var req refreshTokenReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		utils.Fail(c, utils.ErrBadRequest, nil)
+		return
+	}
+
+	// Accept a refresh token and a user agent
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "refresh_token cookie is required",
+			},
+			err,
+		)
+		return
+	}
+
+	userAgent := c.Request.UserAgent()
+	if userAgent == "" {
+		utils.Fail(
+			c,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "User-Agent header is required",
+			},
+			err,
+		)
+		return
+	}
+
+	sessionRepo := s.db.Session()
+	userRepo := s.db.User()
+	db, err := s.db.BeginTx(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			_ = db.Rollback(c)
+			panic(p)
+		}
+	}()
+
+	// Validate the refresh token:
+	// 		- exists in the database
+	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, req.UserID, userAgent)
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			err,
+		)
+		return
+	}
+	// 		- not expired
+	if time.Now().After(session.ExpiresAt) {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			nil,
+		)
+		return
+	}
+	// 		- not revoked
+	if session.Revoked {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			nil,
+		)
+		return
+	}
+
+	// validate refresh token
+	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.RefreshTokenSecret); !ok {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			nil,
+		)
+		return
+	}
+
+	// get user Role
+	role, err := userRepo.GetRole(c, db, session.UserID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	userID := strconv.Itoa(int(session.UserID))
+
+	// Rotate the refresh token
+	access, refresh, err := s.generateTokens(userID, string(role))
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	hashedRefresh, err := utils.HashToken(refresh, s.env.RefreshTokenSecret)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	refreshExpTime := getExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+
+	session.RefreshToken = hashedRefresh
+	session.ExpiresAt = refreshExpTime
+	err = sessionRepo.Update(c, db, &session)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	err = db.Commit(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	// Return access and refresh tokens
+	s.setRefreshCookie(c, refreshToken)
+
+	utils.Success(c, "your tokens have been refreshed", refreshTokenRes{
+		AccessToken: access,
 	})
 }

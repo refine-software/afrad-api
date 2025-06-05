@@ -30,8 +30,8 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		oauth.GET("/google/login", s.loginWithGoogle)
 		oauth.GET("/google/callback", s.googleCallback)
+		oauth.POST("/refresh", s.refreshTokenOauth)
 		oauth.POST("/logout")
-		oauth.POST("/refresh")
 		oauth.GET("/me")
 	}
 
