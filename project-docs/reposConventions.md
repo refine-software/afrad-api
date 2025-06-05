@@ -23,9 +23,12 @@ These methods will take the model of the repo as a parameter and make the change
 	// based on the user_id.
 ```
 
+3. if the method is `create` then we won't need the "by" or "based on", the create query won't have a where clause anyway.
+4. if the method is `get` then we won't need the required columns, but we'll need the "by" or "based on".
+
 ## Method naming
 
-- Don't use the repo name again in the the method name, for example:
+- Don't use the repo name again in the method name, for example:
 
 ```go
 // Wrong naming, we're already using the userRepo, so ofc we'll get the user no shit
