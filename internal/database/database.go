@@ -15,6 +15,7 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
+	PhoneVerificationCode() PhoneVerificationCodeRepository
 	LocalAuth() LocalAuthRepository
 	Oauth() OAuthRepository
 	User() UserRepository
