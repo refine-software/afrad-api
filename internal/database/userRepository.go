@@ -6,16 +6,23 @@ import (
 )
 
 type UserRepository interface {
-	// this method will create the user, with the following data:
+	// This method will create the user, with the following data:
 	// first_name, last_name, image, email, role.
 	Create(ctx *gin.Context, db Querier, user *models.User) (int, error)
-	// this method will update the following user columns:
+
+	// This method will update the following user columns:
 	// first_name, last_name, image, role.
 	// based on the user id.
 	Update(ctx *gin.Context, db Querier, u *models.User) error
+
+	// Get user by email
 	Get(ctx *gin.Context, db Querier, email string) (*models.User, error)
-	// Get the user role by the id
+
+	// Get the user role by user id
 	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error)
+
+	// Get user id by phone number
+	GetIDByPhoneNumber(ctx *gin.Context, db Querier, phoneNumber string) (int, error)
 }
 
 type userRepo struct{}
@@ -95,4 +102,23 @@ func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role,
 	}
 
 	return role, nil
+}
+
+func (r *userRepo) GetIDByPhoneNumber(
+	ctx *gin.Context,
+	db Querier,
+	phoneNumber string,
+) (int, error) {
+	query := `SELECT id
+	FROM users
+	WHERE phone_number = $1
+	`
+	var id int
+
+	err := db.QueryRow(ctx, query, phoneNumber).Scan(&id)
+	if err != nil {
+		return 0, Parse(err)
+	}
+
+	return id, nil
 }
