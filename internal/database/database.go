@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,7 @@ type Service interface {
 	Session() SessionRepository
 	Pool() *pgxpool.Pool
 	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
+	BeginTx(ctx *gin.Context) (pgx.Tx, error)
 	Close()
 }
 
@@ -119,6 +121,10 @@ func (s *service) WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error)
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+func (s *service) BeginTx(ctx *gin.Context) (pgx.Tx, error) {
+	return s.db.Begin(ctx)
 }
 
 func (s *service) Close() {
