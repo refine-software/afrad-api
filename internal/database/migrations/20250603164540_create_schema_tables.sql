@@ -1,4 +1,5 @@
 -- +goose Up
+-- +goose StatementBegin
 CREATE TYPE role AS ENUM ('admin', 'user');
 
 CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'delivered', 'cancelled');
@@ -237,7 +238,10 @@ CREATE TABLE variant_discount (
 	FOREIGN KEY (discount_id) REFERENCES discounts(id),
 	FOREIGN KEY (variant_id) REFERENCES product_variants(id)
 );
+-- +goose StatementEnd
+
 -- +goose Down
+-- +goose StatementBegin
 DROP TABLE cart_items;
 DROP TABLE carts;
 DROP TABLE order_details;
@@ -262,3 +266,4 @@ DROP TABLE local_auth;
 DROP TABLE users;
 DROP TYPE IF EXISTS order_status;
 DROP TYPE IF EXISTS role;
+-- +goose StatementEnd
