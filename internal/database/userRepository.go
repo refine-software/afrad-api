@@ -14,6 +14,8 @@ type UserRepository interface {
 	// based on the user id.
 	Update(ctx *gin.Context, db Querier, u *models.User) error
 	Get(ctx *gin.Context, db Querier, email string) (*models.User, error)
+	// Get the user role by the id
+	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error)
 }
 
 type userRepo struct{}
@@ -78,4 +80,19 @@ func (r *userRepo) Get(
 	}
 
 	return &u, nil
+}
+
+func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error) {
+	query := `SELECT role
+	FROM users
+	WHERE id = $1
+	`
+
+	var role models.Role
+	err := db.QueryRow(ctx, query, id).Scan(&role)
+	if err != nil {
+		return "", Parse(err)
+	}
+
+	return role, nil
 }
