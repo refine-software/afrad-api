@@ -16,9 +16,10 @@ import (
 type Server struct {
 	port int
 
-	db  database.Service
-	env *config.Env
-	s3  *s3.S3Storage
+	db     database.Service
+	env    *config.Env
+	s3     *s3.S3Storage
+	twilio auth.Twilio
 }
 
 func NewServer() *http.Server {
@@ -35,9 +36,10 @@ func NewServer() *http.Server {
 	NewServer := &Server{
 		port: env.Port,
 
-		db:  database.New(env),
-		env: env,
-		s3:  s3Storage,
+		db:     database.New(env),
+		env:    env,
+		s3:     s3Storage,
+		twilio: auth.NewTwilio(env),
 	}
 
 	// Declare Server config

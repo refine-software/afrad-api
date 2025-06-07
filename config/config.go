@@ -41,6 +41,11 @@ type Env struct {
 
 	// Hash
 	HashSecret string `mapstructure:"HASHING_SECRET"`
+
+	// Twilio
+	TwilioAccountSID  string `mapstructure:"TWILIO_ACCOUNT_SID"`
+	TwilioAuthToken   string `mapstructure:"TWILIO_AUTH_TOKEN"`
+	TwilioSandboxFrom string `mapstructure:"TWILIO_SANDBOX_FROM"`
 }
 
 func NewEnv() *Env {
@@ -115,6 +120,10 @@ func bindEnvVariables() {
 		"REFRESH_TOKEN_EXP_IN_DAYS",
 		// Hashing
 		"HASHING_SECRET",
+		// Twilio
+		"TWILIO_ACCOUNT_SID",
+		"TWILIO_AUTH_TOKEN",
+		"TWILIO_SANDBOX_FROM",
 	}
 
 	for _, key := range vars {
