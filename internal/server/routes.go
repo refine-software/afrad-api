@@ -37,8 +37,8 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 
 	auth := e.Group("/auth")
 	{
-		auth.POST("/register")
-		auth.POST("/verify-phone-number")
+		auth.POST("/register", s.register)
+		auth.POST("/verify-phone-number", s.verifyAccount)
 		auth.POST("/resend-verification-otp")
 		auth.POST("/login")
 		auth.POST("/reset-password")

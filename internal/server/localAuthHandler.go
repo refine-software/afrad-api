@@ -10,7 +10,7 @@ import (
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
-type RegisterReq struct {
+type registerReq struct {
 	FirstName   string `json:"firstName"   binding:"required"`
 	LastName    string `json:"lastName"    binding:"required"`
 	Email       string `json:"email"`
@@ -19,9 +19,9 @@ type RegisterReq struct {
 	Password    string `json:"password"    binding:"required"`
 }
 
-func (s *Server) Register(ctx *gin.Context) {
+func (s *Server) register(ctx *gin.Context) {
 	// get user info
-	var req RegisterReq
+	var req registerReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
@@ -82,13 +82,13 @@ func (s *Server) Register(ctx *gin.Context) {
 	}
 }
 
-type userVerifyReq struct {
+type verifyAccountReq struct {
 	PhoneNumber string `json:"phoneNumber" binding:"required"`
 	OTP         string `json:"otp"         binding:"required"`
 }
 
-func (s *Server) verifyUser(ctx *gin.Context) {
-	var req userVerifyReq
+func (s *Server) verifyAccount(ctx *gin.Context) {
+	var req verifyAccountReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
