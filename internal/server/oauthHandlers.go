@@ -383,3 +383,28 @@ func (s *Server) logout(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (s *Server) logoutFromAllSessions(c *gin.Context) {
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	db := s.db.Pool()
+	sessionRepo := s.db.Session()
+
+	err = sessionRepo.RevokeAllOfUser(c, db, int32(userID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, "you have logged out from all sessions", nil)
+}

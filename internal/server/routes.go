@@ -65,7 +65,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 		user.GET("/review")
 		user.PATCH("/user/notificatoin-preferences")
 		user.POST("/logout", s.logout)
-		user.POST("/logout-all")
+		user.POST("/logout-all", s.logoutFromAllSessions)
 	}
 
 	cart := protected.Group("/cart")
