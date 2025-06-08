@@ -1,9 +1,17 @@
 -- +goose Up
 -- +goose StatementBegin
-
-ALTER TABLE sessions ADD constraint sessions_user_id_user_agent_key UNIQUE (
-    user_agent, user_id
-);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'sessions_user_id_user_agent_key'
+    ) THEN
+        ALTER TABLE sessions
+        ADD CONSTRAINT sessions_user_id_user_agent_key UNIQUE (user_agent, user_id);
+    END IF;
+END
+$$;
 -- +goose StatementEnd
 
 -- +goose Down

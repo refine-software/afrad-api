@@ -1,10 +1,23 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TYPE role AS ENUM ('admin', 'user');
 
-CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'delivered', 'cancelled');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
+        CREATE TYPE role AS ENUM ('admin', 'user');
+    END IF;
+END
+$$;
 
-CREATE TABLE users (
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE order_status AS ENUM ('order_placed', 'in_progress', 'shipped', 'delivered', 'cancelled');
+    END IF;
+END
+$$;
+
+CREATE TABLE IF NOT EXISTS users (
 	id SERIAL PRIMARY KEY,
 	first_name VARCHAR NOT NULL,
 	last_name VARCHAR,
@@ -15,7 +28,7 @@ CREATE TABLE users (
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE local_auth (
+CREATE TABLE IF NOT EXISTS local_auth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	phone_number VARCHAR NOT NULL UNIQUE,
 	is_phone_verified BOOLEAN DEFAULT false,
@@ -24,7 +37,7 @@ CREATE TABLE local_auth (
 	PRIMARY KEY (user_id)
 );
 
-CREATE TABLE oauth (
+CREATE TABLE IF NOT EXISTS oauth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	provider VARCHAR NOT NULL,
 	provider_id UUID UNIQUE NOT NULL,
@@ -32,7 +45,7 @@ CREATE TABLE oauth (
 	PRIMARY KEY (user_id)
 );
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
 	id SERIAL PRIMARY KEY,
 	revoked BOOLEAN DEFAULT false,
 	user_agent varchar UNIQUE NOT NULL,
@@ -45,7 +58,7 @@ CREATE TABLE sessions (
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE phone_verification_codes (
+CREATE TABLE IF NOT EXISTS phone_verification_codes (
 	id SERIAL PRIMARY KEY,
 	otp_code VARCHAR NOT NULL,
 	is_used BOOLEAN DEFAULT false,
@@ -56,7 +69,7 @@ CREATE TABLE phone_verification_codes (
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE password_resets (
+CREATE TABLE IF NOT EXISTS password_resets (
 	id SERIAL PRIMARY KEY,
 	otp_code VARCHAR NOT NULL,
 	is_used BOOLEAN DEFAULT false,
@@ -67,18 +80,18 @@ CREATE TABLE password_resets (
 	FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR UNIQUE NOT NULL,
 	parent_id INT REFERENCES categories(id)
 );
 
-CREATE TABLE brands(
+CREATE TABLE IF NOT EXISTS brands(
 	id SERIAL PRIMARY KEY,
 	brand VARCHAR UNIQUE NOT NULL
 );
 
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR UNIQUE NOT NULL,
 	details TEXT,
@@ -91,7 +104,7 @@ CREATE TABLE products (
 	FOREIGN KEY (brand_id) REFERENCES brands(id) 
 );
 
-CREATE TABLE sizes (
+CREATE TABLE IF NOT EXISTS sizes (
 	id SERIAL PRIMARY KEY,
 	size VARCHAR NOT NULL,
 	label VARCHAR NOT NULL,
@@ -99,12 +112,12 @@ CREATE TABLE sizes (
 	UNIQUE(size, label)
 );
 
-CREATE TABLE colors (
+CREATE TABLE IF NOT EXISTS colors (
 	id SERIAL PRIMARY KEY,
 	color VARCHAR NOT NULL UNIQUE
 );
 
-CREATE TABLE product_variants (
+CREATE TABLE IF NOT EXISTS product_variants (
 	id SERIAL PRIMARY KEY,
 	quantity INT NOT NULL,
 	price INT NOT NULL,
@@ -121,7 +134,7 @@ CREATE TABLE product_variants (
 	FOREIGN KEY(size_id) REFERENCES sizes(id)
 );
 
-CREATE TABLE rating_review (
+CREATE TABLE IF NOT EXISTS rating_review (
 	id SERIAL PRIMARY KEY,
 	rating INT NOT NULL,
 	review VARCHAR,
@@ -136,7 +149,7 @@ CREATE TABLE rating_review (
 	FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
-CREATE TABLE images (
+CREATE TABLE IF NOT EXISTS images (
 	id SERIAL PRIMARY KEY,
 	image TEXT UNIQUE NOT NULL,
 	low_res_image TEXT UNIQUE NOT NULL,
@@ -145,7 +158,7 @@ CREATE TABLE images (
 	FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
-CREATE TABLE carts (
+CREATE TABLE IF NOT EXISTS carts (
 	id SERIAL PRIMARY KEY,
 	total_price INT NOT NULL,
 	quantity INT NOT NULL,
@@ -155,7 +168,7 @@ CREATE TABLE carts (
 	FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE cart_items (
+CREATE TABLE IF NOT EXISTS cart_items (
 	id SERIAL PRIMARY KEY,
 	quantity INT NOT NULL,
 	total_price INT NOT NULL,
@@ -168,7 +181,7 @@ CREATE TABLE cart_items (
 	FOREIGN KEY(product_id) REFERENCES product_variants(id) ON DELETE CASCADE
 );
 
-CREATE TABLE wishlists (
+CREATE TABLE IF NOT EXISTS wishlists (
 	id SERIAL PRIMARY KEY,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
@@ -180,12 +193,12 @@ CREATE TABLE wishlists (
 	FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
-CREATE TABLE cities (
+CREATE TABLE IF NOT EXISTS cities (
 	id SERIAL PRIMARY KEY,
 	city VARCHAR UNIQUE
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
 	id SERIAL PRIMARY KEY,
 	town VARCHAR NOT NULL,
 	street VARCHAR NOT NULL,
@@ -205,7 +218,7 @@ CREATE TABLE orders (
 	FOREIGN KEY (cities_id) REFERENCES cities(id)
 );
 
-CREATE TABLE order_details (
+CREATE TABLE IF NOT EXISTS order_details (
 	id SERIAL PRIMARY KEY,
 	quantity INT NOT NULL,
 	total_price INT NOT NULL,
@@ -218,7 +231,7 @@ CREATE TABLE order_details (
 	FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL -- null or cascade
 );
 
-CREATE TABLE discounts (
+CREATE TABLE IF NOT EXISTS discounts (
 	id SERIAL PRIMARY KEY,
 	discount_type VARCHAR NOT NULL,
 	discount_value DECIMAL(10, 2) NOT NULL,
@@ -228,7 +241,7 @@ CREATE TABLE discounts (
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE variant_discount (
+CREATE TABLE IF NOT EXISTS variant_discount (
 	id SERIAL PRIMARY KEY,
 	
 	discount_id INT NOT NULL,
@@ -242,28 +255,28 @@ CREATE TABLE variant_discount (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE cart_items;
-DROP TABLE carts;
-DROP TABLE order_details;
-DROP TABLE orders;
-DROP TABLE wishlists;
-DROP TABLE rating_review;
-DROP TABLE variant_discount;
-DROP TABLE cities;
-DROP TABLE discounts;
-DROP TABLE product_variants;
-DROP TABLE images;
-DROP TABLE products;
-DROP TABLE sizes;
-DROP TABLE colors;
-DROP TABLE brands;
-DROP TABLE categories;
-DROP TABLE phone_verification_codes;
-DROP TABLE sessions;
-DROP TABLE oauth;
-DROP TABLE password_resets;
-DROP TABLE local_auth;
-DROP TABLE users;
+DROP TABLE IF EXISTS cart_items;
+DROP TABLE IF EXISTS carts;
+DROP TABLE IF EXISTS order_details;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS wishlists;
+DROP TABLE IF EXISTS rating_review;
+DROP TABLE IF EXISTS variant_discount;
+DROP TABLE IF EXISTS cities;
+DROP TABLE IF EXISTS discounts;
+DROP TABLE IF EXISTS product_variants;
+DROP TABLE IF EXISTS images;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS sizes;
+DROP TABLE IF EXISTS colors;
+DROP TABLE IF EXISTS brands;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS phone_verification_codes;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS oauth;
+DROP TABLE IF EXISTS password_resets;
+DROP TABLE IF EXISTS local_auth;
+DROP TABLE IF EXISTS users;
 DROP TYPE IF EXISTS order_status;
 DROP TYPE IF EXISTS role;
 -- +goose StatementEnd

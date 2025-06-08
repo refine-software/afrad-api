@@ -8,6 +8,7 @@ CREATE TABLE users (
 	last_name VARCHAR,
 	image TEXT,
 	email VARCHAR NOT NULL UNIQUE,
+	phone_number VARCHAR UNIQUE,
 	role role,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -15,7 +16,6 @@ CREATE TABLE users (
 
 CREATE TABLE local_auth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
-	phone_number VARCHAR UNIQUE,
 	is_account_verified BOOLEAN DEFAULT false,
 	password_hash TEXT NOT NULL,
 
@@ -25,7 +25,7 @@ CREATE TABLE local_auth (
 CREATE TABLE oauth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
 	provider VARCHAR NOT NULL,
-	provider_id UUID UNIQUE,
+	provider_id VARCHAR UNIQUE,
 
 	PRIMARY KEY (user_id)
 );
@@ -44,7 +44,7 @@ CREATE TABLE sessions (
 	UNIQUE(user_id, user_agent)
 );
 
-CREATE TABLE phone_verification_codes (
+CREATE TABLE account_verification_codes (
 	id SERIAL PRIMARY KEY,
 	otp_code VARCHAR NOT NULL,
 	is_used BOOLEAN DEFAULT false,
@@ -197,8 +197,8 @@ CREATE TABLE orders (
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	cancelled_at TIMESTAMP,
 	
-	cities_id INTEGER NOT NULL,
-	user_id INTEGER,
+	cities_id INT NOT NULL,
+	user_id INT NOT NULL,
 
 	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
 	FOREIGN KEY (cities_id) REFERENCES cities(id)
