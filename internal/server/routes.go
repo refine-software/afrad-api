@@ -30,9 +30,6 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		oauth.GET("/google/login", s.loginWithGoogle)
 		oauth.GET("/google/callback", s.googleCallback)
-		oauth.POST("/refresh", s.refreshTokenOauth)
-		oauth.POST("/logout")
-		oauth.GET("/me")
 	}
 
 	auth := e.Group("/auth")
@@ -43,7 +40,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 		auth.POST("/login")
 		auth.POST("/reset-password")
 		auth.POST("/reset-password/confirm")
-		auth.POST("/refresh-tokens")
+		auth.POST("/refresh", s.refreshTokens)
 	}
 
 	products := e.Group("/products")

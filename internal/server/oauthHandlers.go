@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
+	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
@@ -194,11 +195,11 @@ type refreshTokenRes struct {
 	AccessToken string `json:"accessToken"`
 }
 
-func (s *Server) refreshTokenOauth(c *gin.Context) {
+func (s *Server) refreshTokens(c *gin.Context) {
 	var req refreshTokenReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		utils.Fail(c, utils.ErrBadRequest, nil)
+		utils.Fail(c, utils.ErrBadRequest, err)
 		return
 	}
 
@@ -216,16 +217,8 @@ func (s *Server) refreshTokenOauth(c *gin.Context) {
 		return
 	}
 
-	userAgent := c.Request.UserAgent()
+	userAgent := getHeader(c, "User-Agent")
 	if userAgent == "" {
-		utils.Fail(
-			c,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "User-Agent header is required",
-			},
-			err,
-		)
 		return
 	}
 
@@ -260,7 +253,7 @@ func (s *Server) refreshTokenOauth(c *gin.Context) {
 		utils.Fail(
 			c,
 			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			nil,
+			err,
 		)
 		return
 	}
@@ -269,17 +262,17 @@ func (s *Server) refreshTokenOauth(c *gin.Context) {
 		utils.Fail(
 			c,
 			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			nil,
+			err,
 		)
 		return
 	}
 
 	// validate refresh token
-	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.RefreshTokenSecret); !ok {
+	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.HashSecret); !ok {
 		utils.Fail(
 			c,
 			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			nil,
+			errors.New("couldn't verify the refresh token"),
 		)
 		return
 	}
@@ -295,13 +288,13 @@ func (s *Server) refreshTokenOauth(c *gin.Context) {
 	userID := strconv.Itoa(int(session.UserID))
 
 	// Rotate the refresh token
-	access, refresh, err := s.generateTokens(userID, string(role))
+	newAccess, newRefresh, err := s.generateTokens(userID, string(role))
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
 
-	hashedRefresh, err := utils.HashToken(refresh, s.env.RefreshTokenSecret)
+	hashedRefresh, err := utils.HashToken(newRefresh, s.env.HashSecret)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -325,9 +318,67 @@ func (s *Server) refreshTokenOauth(c *gin.Context) {
 	}
 
 	// Return access and refresh tokens
-	s.setRefreshCookie(c, refreshToken)
+	s.setRefreshCookie(c, newRefresh)
 
 	utils.Success(c, "your tokens have been refreshed", refreshTokenRes{
-		AccessToken: access,
+		AccessToken: newAccess,
 	})
+}
+
+func (s *Server) logout(c *gin.Context) {
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusBadRequest, Message: "Missing refresh token cookie"},
+			err,
+		)
+		return
+	}
+
+	db := s.db.Pool()
+	sessionRepo := s.db.Session()
+
+	userAgent := getHeader(c, "User-Agent")
+	if userAgent == "" {
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, int32(userID), userAgent)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	// Check refresh token validity
+	ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.RefreshTokenSecret)
+	if !ok {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	// revoke the session
+	session.Revoked = true
+	err = sessionRepo.Update(c, db, &session)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	setEmptyCookie(c)
+
+	c.Status(http.StatusNoContent)
 }
