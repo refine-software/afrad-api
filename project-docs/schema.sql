@@ -7,7 +7,7 @@ CREATE TABLE users (
 	first_name VARCHAR NOT NULL,
 	last_name VARCHAR,
 	image TEXT,
-	email varchar UNIQUE,
+	email VARCHAR NOT NULL UNIQUE,
 	role role,
 	created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -15,8 +15,8 @@ CREATE TABLE users (
 
 CREATE TABLE local_auth (
 	user_id INT REFERENCES users(id) ON DELETE CASCADE,
-	phone_number VARCHAR NOT NULL UNIQUE,
-	is_phone_verified BOOLEAN DEFAULT false,
+	phone_number VARCHAR UNIQUE,
+	is_account_verified BOOLEAN DEFAULT false,
 	password_hash TEXT NOT NULL,
 
 	PRIMARY KEY (user_id)
