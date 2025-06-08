@@ -67,11 +67,12 @@ func (s *Server) upsertUser(
 
 	// create user
 	u = &models.User{
-		FirstName: getNameFallback(user.FirstName, user.Name),
-		LastName:  pgtype.Text{String: user.LastName, Valid: true},
-		Image:     pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""},
-		Email:     user.Email,
-		Role:      role,
+		FirstName:   getNameFallback(user.FirstName, user.Name),
+		LastName:    pgtype.Text{String: user.LastName, Valid: true},
+		Image:       pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""},
+		Email:       user.Email,
+		PhoneNumber: pgtype.Text{},
+		Role:        role,
 	}
 	userID, err := userRepo.Create(c, db, u)
 	if err != nil {
