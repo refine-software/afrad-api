@@ -2,31 +2,55 @@ package server
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/refine-software/afrad-api/internal/auth"
+	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
 type registerReq struct {
-	FirstName   string `json:"firstName"   binding:"required"`
-	LastName    string `json:"lastName"    binding:"required"`
-	Email       string `json:"email"`
-	Image       string `json:"image"`
-	PhoneNumber string `json:"phoneNumber" binding:"required"`
-	Password    string `json:"password"    binding:"required"`
+	FirstName   string `form:"firstName"   binding:"required"`
+	LastName    string `form:"lastName"    binding:"required"`
+	Email       string `form:"email"       binding:"required"`
+	PhoneNumber string `form:"phoneNumber"`
+	Password    string `form:"password"    binding:"required"`
 }
 
 func (s *Server) register(ctx *gin.Context) {
 	// get user info
 	var req registerReq
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBind(&req)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
 		return
 	}
+
+	// upload image if exists
+	var imageURL string
+	file, fileHeader, err := ctx.Request.FormFile("image")
+	if err != nil {
+		if err == http.ErrMissingFile {
+			file = nil
+			fileHeader = nil
+
+		} else {
+			utils.Fail(ctx, utils.ErrBadRequest, err)
+			return
+		}
+	} else {
+		imageURL, err = s.s3.UploadImage(ctx, file, fileHeader)
+		if err != nil {
+			utils.Fail(ctx, utils.ErrInternal, err)
+			return
+		}
+
+	}
+
 	userRepo := s.db.User()
 	localAuthRepo := s.db.LocalAuth()
 	otpCodeRepo := s.db.PhoneVerificationCode()
@@ -35,7 +59,8 @@ func (s *Server) register(ctx *gin.Context) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
-		Image:     req.Image,
+		Image:     imageURL,
+		Role:      "user",
 	}
 
 	// hash tha password
@@ -72,6 +97,10 @@ func (s *Server) register(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
+		err = auth.SendVerificationEmail(req.Email, otp, s.env)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
@@ -80,11 +109,13 @@ func (s *Server) register(ctx *gin.Context) {
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
+
+	utils.Created(ctx, "user Created", "")
 }
 
 type verifyAccountReq struct {
-	PhoneNumber string `json:"phoneNumber" binding:"required"`
-	OTP         string `json:"otp"         binding:"required"`
+	Email string `json:"email" binding:"required"`
+	OTP   string `json:"otp"   binding:"required"`
 }
 
 func (s *Server) verifyAccount(ctx *gin.Context) {
@@ -100,10 +131,19 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	otpCodeRepo := s.db.PhoneVerificationCode()
 	localAuthRepo := s.db.LocalAuth()
 
-	// get the user_id by requested phone number
-	userID, err := userRepo.GetIDByPhoneNumber(ctx, db, req.PhoneNumber)
+	// check if email exists in the database
+	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
+	if errors.Is(err, database.ErrNotFound) {
+		utils.Fail(ctx, utils.ErrBadRequest, err)
+		return
+	}
+
+	// get the user_id by requested email
+
+	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
 	if err != nil {
-		utils.MapDBErrorToAPIError(err, "user_id")
+		apiErr := utils.MapDBErrorToAPIError(err, "user_id")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -111,7 +151,8 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	var otpCodes int
 	otpCodes, err = otpCodeRepo.CountUserOtpCodes(ctx, db, userID)
 	if err != nil {
-		utils.MapDBErrorToAPIError(err, "otp")
+		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -123,13 +164,8 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	// get otp_code and otp Expires_at by user_id
 	otp, err := otpCodeRepo.Get(ctx, db, int32(userID))
 	if err != nil {
-		utils.MapDBErrorToAPIError(err, "otp_code")
-		return
-	}
-
-	// check if otp code is expired
-	if time.Now().After(otp.ExpiresAt) {
-		utils.Fail(ctx, utils.ErrUnauthorized, errors.New("your OTP is expired"))
+		apiErr := utils.MapDBErrorToAPIError(err, "otp_code")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -139,16 +175,23 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return
 	}
 
+	// check if otp code is expired
+	if time.Now().After(otp.ExpiresAt) {
+		utils.Fail(ctx, utils.ErrUnauthorized, errors.New("your OTP is expired"))
+		return
+	}
+
 	// start a transaction
 	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
-			UserID:          int32(userID),
-			IsPhoneVerified: true,
+			UserID:            int32(userID),
+			IsAccountVerified: true,
 		})
 		if err != nil {
 			return err
 		}
 		err = otpCodeRepo.Update(ctx, tx, &models.PhoneVerification{
+			UserID: int32(userID),
 			IsUsed: true,
 		})
 		if err != nil {
