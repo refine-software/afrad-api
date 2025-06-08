@@ -29,7 +29,11 @@ var (
 		http.StatusInternalServerError,
 		"Something went wrong, please try again later.",
 	)
-	ErrStolenToken   = NewAPIError(http.StatusUnauthorized, "kharab allah")
+	ErrStolenToken = NewAPIError(http.StatusUnauthorized, "sus behavior")
+	ErrForbidden   = NewAPIError(
+		http.StatusForbidden,
+		"you're not allowed to access this resource",
+	)
 	ErrHeaderMissing = func(headerName string) *APIError {
 		return NewAPIError(http.StatusBadRequest, fmt.Sprintf("%s header is missing", headerName))
 	}
