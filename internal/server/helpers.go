@@ -83,6 +83,18 @@ func (s *Server) setRefreshCookie(c *gin.Context, refreshToken string) {
 	s.setCookie(c, "refresh_token", refreshToken)
 }
 
+func setEmptyCookie(c *gin.Context) {
+	c.SetCookie(
+		"",
+		"",
+		0,
+		"/",
+		"",
+		false,
+		true,
+	)
+}
+
 func getExpTimeAfterDays(numOfDays int) time.Time {
 	return time.Now().Add((time.Hour * 24) * time.Duration(numOfDays))
 }
