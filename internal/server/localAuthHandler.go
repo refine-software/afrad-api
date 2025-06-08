@@ -56,11 +56,12 @@ func (s *Server) register(ctx *gin.Context) {
 	otpCodeRepo := s.db.AccountVerificationCode()
 
 	user := &models.User{
-		FirstName: req.FirstName,
-		LastName:  pgtype.Text{String: req.LastName, Valid: true},
-		Email:     req.Email,
-		Image:     pgtype.Text{String: imageURL, Valid: imageURL != ""},
-		Role:      getUserRole(req.Email),
+		FirstName:   req.FirstName,
+		LastName:    pgtype.Text{String: req.LastName, Valid: true},
+		Email:       req.Email,
+		PhoneNumber: pgtype.Text{String: req.PhoneNumber, Valid: true},
+		Image:       pgtype.Text{String: imageURL, Valid: imageURL != ""},
+		Role:        getUserRole(req.Email),
 	}
 
 	// hash the password
@@ -80,7 +81,6 @@ func (s *Server) register(ctx *gin.Context) {
 
 		err = localAuthRepo.Create(ctx, tx, &models.LocalAuth{
 			UserID:       int32(userID),
-			PhoneNumber:  req.PhoneNumber,
 			PasswordHash: passwordHashed,
 		})
 		if err != nil {
@@ -148,23 +148,6 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	// limit the otps to 10
-	// TODO: we should limit discounts to 10 per day
-	// ISSUE: otp codes should be limited on endpoint that create them
-	// in this endpoint we're verifying the account and otp, not creating an otp.
-	var otpCodes int
-	otpCodes, err = otpCodeRepo.CountUserOtpCodes(ctx, db, userID)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "otp")
-		utils.Fail(ctx, apiErr, err)
-		return
-	}
-
-	if otpCodes > 10 {
-		utils.Fail(ctx, utils.ErrBadRequest, errors.New("you reach maximam OTP code request"))
-		return
-	}
-
 	// get otp_code and otp Expires_at by user_id
 	otp, err := otpCodeRepo.Get(ctx, db, int32(userID))
 	if err != nil {
@@ -187,13 +170,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	// start a transaction
 	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
-			UserID:            int32(userID),
-			IsAccountVerified: true,
-			// PasswordHash feild is required if you don't provide it,
-			// it won't automatically be omitted, so this will result in an error
-			// or the phone number will be set to ""
-		})
+		err = localAuthRepo.UpdateIsAccountVerifiedToTrue(ctx, tx, int32(userID))
 		if err != nil {
 			return err
 		}
