@@ -10,13 +10,13 @@
 
 | DONE | Method | Endpoint                        | Description                                 |
 | ---- | ------ | ------------------------------- | ------------------------------------------- |
-| ❌   | `POST` | `/auth/register`                | Register a new user                         |
-| ❌   | `POST` | `/auth/verify-phone-number`     | Verify phone number to activate account     |
+| ✅   | `POST` | `/auth/register`                | Register a new user                         |
+| ✅   | `POST` | `/auth/verify-account`          | Verify phone number to activate account     |
 | ❌   | `POST` | `/auth/resend-verification-otp` | Resend verification otp to activate account |
 | ❌   | `POST` | `/auth/login`                   | Login and receive JWT                       |
 | ❌   | `POST` | `/auth/reset-password`          | Request a password reset                    |
 | ❌   | `POST` | `/auth/reset-password/confirm`  | Set a new password                          |
-| ❌   | `POST` | `/auth/refresh-tokens`          | Refresh the access and refresh tokens       |
+| ✅   | `POST` | `/auth/refresh`                 | Refresh the access and refresh tokens       |
 
 ### Oauth
 
@@ -24,8 +24,6 @@
 | ---- | ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
 | ✅   | `GET`  | `/oauth/google/login`    | Redirects the user to Google's OAuth 2.0 authorization URL with PKCE support                                                 |
 | ✅   | `GET`  | `/oauth/google/callback` | Handles Google's redirect with the auth code, exchanges it for tokens, verifies ID token, and signs in or registers the user |
-| ✅   | `POST` | `/oauth/logout`          | Logs the user out by revoking or deleting your app's session or JWT                                                          |
-| ✅   | `POST` | `/oauth/refresh`         | Issues a new JWT access token using a valid refresh token (if you implement refresh logic)                                   |
 
 ## User
 
@@ -38,8 +36,8 @@
 | ❌   | `PUT`    | `/user/review`                   | Change review                     |
 | ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews                 |
 | ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preferences  |
-| ❌   | `POST`   | `/user/logout`                   | Revoke the current session        |
-| ❌   | `POST`   | `/user/logout-all`               | Revoke all sessions               |
+| ✅   | `POST`   | `/user/logout`                   | Revoke the current session        |
+| ✅   | `POST`   | `/user/logout-all`               | Revoke all sessions               |
 
 ## Product
 
