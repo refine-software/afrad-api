@@ -7,14 +7,15 @@ import (
 )
 
 type User struct {
-	ID        int32       `json:"id"`
-	FirstName string      `json:"firstName"`
-	LastName  pgtype.Text `json:"lastName"`
-	Image     pgtype.Text `json:"image"`
-	Email     string      `json:"email"`
-	Role      Role        `json:"role"`
-	CreatedAt time.Time   `json:"-"`
-	UpdatedAt time.Time   `json:"-"`
+	ID          int32       `json:"id"`
+	FirstName   string      `json:"firstName"`
+	LastName    pgtype.Text `json:"lastName"`
+	Image       pgtype.Text `json:"image"`
+	Email       string      `json:"email"`
+	PhoneNumber pgtype.Text `json:"PhoneNumber"`
+	Role        Role        `json:"role"`
+	CreatedAt   time.Time   `json:"-"`
+	UpdatedAt   time.Time   `json:"-"`
 }
 
 type OAuth struct {
@@ -25,7 +26,6 @@ type OAuth struct {
 
 type LocalAuth struct {
 	UserID            int32
-	PhoneNumber       string
 	IsAccountVerified bool
 	PasswordHash      string
 }

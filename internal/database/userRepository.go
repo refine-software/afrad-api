@@ -7,7 +7,7 @@ import (
 
 type UserRepository interface {
 	// This method will create the user, with the following data:
-	// first_name, last_name, image, email, role.
+	// first_name, last_name, image, email, phone_number role.
 	Create(ctx *gin.Context, db Querier, user *models.User) (int, error)
 
 	// This method will update the following user columns:
@@ -36,13 +36,14 @@ func NewUserRepository() UserRepository {
 
 func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, error) {
 	query := `
-	INSERT INTO users(first_name, last_name, image, email, role)
+	INSERT INTO users(first_name, last_name, image, email, phone_number, role)
 	VALUES($1, $2, $3, $4, $5)
 	RETURNING id
 	`
 
 	var id int
-	err := db.QueryRow(ctx, query, u.FirstName, u.LastName, u.Image, u.Email, u.Role).Scan(&id)
+	err := db.QueryRow(ctx, query, u.FirstName, u.LastName, u.Image, u.Email, u.PhoneNumber, u.Role).
+		Scan(&id)
 	if err != nil {
 		return 0, Parse(err)
 	}
