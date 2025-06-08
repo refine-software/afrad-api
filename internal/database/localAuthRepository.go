@@ -37,10 +37,10 @@ func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth
 func (r *localAuthRepo) Update(ctx *gin.Context, db Querier, l *models.LocalAuth) error {
 	query := `
 		UPDATE local_auth
-		SET is_phone_verified = $2, password_hash = $3
+		SET is_account_verified = $2, password_hash = $3
 		WHERE user_id = $1
 	`
-	_, err := db.Exec(ctx, query, l.UserID, l.IsPhoneVerified, l.PasswordHash)
+	_, err := db.Exec(ctx, query, l.UserID, l.IsAccountVerified, l.PasswordHash)
 	if err != nil {
 		return Parse(err)
 	}

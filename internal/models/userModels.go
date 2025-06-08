@@ -20,10 +20,10 @@ type OAuth struct {
 }
 
 type LocalAuth struct {
-	UserID          int32
-	PhoneNumber     string
-	IsPhoneVerified bool
-	PasswordHash    string
+	UserID            int32
+	PhoneNumber       string
+	IsAccountVerified bool
+	PasswordHash      string
 }
 
 type Session struct {
