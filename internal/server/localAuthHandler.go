@@ -60,10 +60,10 @@ func (s *Server) register(ctx *gin.Context) {
 		LastName:  req.LastName,
 		Email:     req.Email,
 		Image:     pgtype.Text{String: imageURL, Valid: imageURL != ""},
-		Role:      "user",
+		Role:      getUserRole(req.Email),
 	}
 
-	// hash tha password
+	// hash the password
 	passwordHashed, err := utils.HashPassword(req.Password)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrInternal, err)
@@ -97,6 +97,7 @@ func (s *Server) register(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
+
 		err = auth.SendVerificationEmail(req.Email, otp, s.env)
 		if err != nil {
 			return err
@@ -110,7 +111,7 @@ func (s *Server) register(ctx *gin.Context) {
 		return
 	}
 
-	utils.Created(ctx, "user Created", "")
+	utils.Created(ctx, "user created", nil)
 }
 
 type verifyAccountReq struct {
@@ -148,6 +149,9 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	}
 
 	// limit the otps to 10
+	// TODO: we should limit discounts to 10 per day
+	// ISSUE: otp codes should be limited on endpoint that create them
+	// in this endpoint we're verifying the account and otp, not creating an otp.
 	var otpCodes int
 	otpCodes, err = otpCodeRepo.CountUserOtpCodes(ctx, db, userID)
 	if err != nil {
@@ -186,6 +190,9 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		err = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
 			UserID:            int32(userID),
 			IsAccountVerified: true,
+			// PasswordHash feild is required if you don't provide it,
+			// it won't automatically be omitted, so this will result in an error
+			// or the phone number will be set to ""
 		})
 		if err != nil {
 			return err
@@ -205,5 +212,5 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, "you are verified", nil)
+	utils.Success(ctx, "your account has been verified", nil)
 }
