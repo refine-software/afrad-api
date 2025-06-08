@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type Order struct {
 	ID          int32
@@ -15,7 +19,7 @@ type Order struct {
 	OrderStatus OrderStatus
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	CancelledAt time.Time
+	CancelledAt pgtype.Time
 }
 
 type OrderDetails struct {

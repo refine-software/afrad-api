@@ -9,7 +9,7 @@ import (
 type User struct {
 	ID        int32       `json:"id"`
 	FirstName string      `json:"firstName"`
-	LastName  string      `json:"lastName"`
+	LastName  pgtype.Text `json:"lastName"`
 	Image     pgtype.Text `json:"image"`
 	Email     string      `json:"email"`
 	Role      Role        `json:"role"`
@@ -50,7 +50,7 @@ type PasswordReset struct {
 	UserID    int32
 }
 
-type PhoneVerification struct {
+type AccountVerificationCode struct {
 	ID        int32
 	OtpCode   string
 	IsUsed    bool

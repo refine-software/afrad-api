@@ -1,11 +1,15 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type Product struct {
 	ID              int32
 	Name            string
-	Details         string
+	Details         pgtype.Text
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	BrandID         int32
@@ -32,7 +36,7 @@ type Category struct {
 type RatingReview struct {
 	ID        int32
 	Rating    int32
-	Review    string
+	Review    pgtype.Text
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	UserID    int32
