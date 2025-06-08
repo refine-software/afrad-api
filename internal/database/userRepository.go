@@ -21,8 +21,11 @@ type UserRepository interface {
 	// Get the user role by user id
 	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error)
 
-	// Get user id by phone number
-	GetIDByPhoneNumber(ctx *gin.Context, db Querier, phoneNumber string) (int, error)
+	// Get user id by email
+	GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, error)
+
+	// Check if email is exist
+	CheckEmailExistence(ctx *gin.Context, db Querier, email string) error
 }
 
 type userRepo struct{}
@@ -104,21 +107,31 @@ func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role,
 	return role, nil
 }
 
-func (r *userRepo) GetIDByPhoneNumber(
-	ctx *gin.Context,
-	db Querier,
-	phoneNumber string,
-) (int, error) {
-	query := `SELECT id
+func (r *userRepo) GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, error) {
+	query := `
+	SELECT id
 	FROM users
-	WHERE phone_number = $1
+	WHERE email = $1
 	`
 	var id int
 
-	err := db.QueryRow(ctx, query, phoneNumber).Scan(&id)
+	err := db.QueryRow(ctx, query, email).Scan(&id)
 	if err != nil {
 		return 0, Parse(err)
 	}
 
 	return id, nil
+}
+
+func (r *userRepo) CheckEmailExistence(ctx *gin.Context, db Querier, email string) error {
+	query := `
+		SELECT 1 AS exist FROM users
+		WHERE email = $1
+	`
+	var exist int32
+	err := db.QueryRow(ctx, query, email).Scan(&exist)
+	if err != nil {
+		return Parse(err)
+	}
+	return nil
 }

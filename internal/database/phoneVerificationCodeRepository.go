@@ -69,14 +69,14 @@ func (r *phoneVerificationCodeRepo) Get(
 	userID int32,
 ) (*models.PhoneVerification, error) {
 	query := `
-	user_id INT NOT NULL UNIQUE,
 		SELECT id, otp_code, is_used, expires_at, created_at
 		FROM phone_verification_codes
 		WHERE user_id = $1;
 	`
 
 	var p models.PhoneVerification
-	err := db.QueryRow(ctx, query).Scan(&p.ID, &p.OtpCode, &p.IsUsed, &p.ExpiresAt, &p.CreatedAt)
+	err := db.QueryRow(ctx, query, userID).
+		Scan(&p.ID, &p.OtpCode, &p.IsUsed, &p.ExpiresAt, &p.CreatedAt)
 	if err != nil {
 		return nil, Parse(err)
 	}
