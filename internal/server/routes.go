@@ -55,7 +55,10 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 }
 
 func (s *Server) registerUserRoutes(e *gin.Engine) {
-	user := e.Group("/user")
+	protected := e.Group("")
+	protected.Use(middleware.AuthRequired(s.env.AccessTokenSecret))
+
+	user := protected.Group("/user")
 	{
 		user.GET("")
 		user.PUT("")
@@ -64,11 +67,11 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 		user.PUT("/review")
 		user.GET("/review")
 		user.PATCH("/user/notificatoin-preferences")
-		user.POST("/logout")
+		user.POST("/logout", s.logout)
 		user.POST("/logout-all")
 	}
 
-	cart := e.Group("/cart")
+	cart := protected.Group("/cart")
 	{
 		cart.GET("")
 		cart.POST("/item")
@@ -76,14 +79,14 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 		cart.DELETE("/:id")
 	}
 
-	wishlist := e.Group("/wishlist")
+	wishlist := protected.Group("/wishlist")
 	{
 		wishlist.GET("")
 		wishlist.POST("/:id")
 		wishlist.DELETE("/:id")
 	}
 
-	orders := e.Group("/orders")
+	orders := protected.Group("/orders")
 	{
 		orders.GET("")
 		orders.POST("")
