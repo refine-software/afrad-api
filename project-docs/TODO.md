@@ -27,3 +27,4 @@
 
 - [ ] Session management is broken, the user is not reusing a session and we're not removing them, so the number of session will keep on growing.
 - [ ] Implement some kind of a tracer, when a database level error happens there is no way to know where this error is coming from.
+- [ ] User creation in oAuth required phone number.
