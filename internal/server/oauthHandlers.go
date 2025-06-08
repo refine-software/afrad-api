@@ -51,7 +51,7 @@ func (s *Server) upsertUser(
 	if u != nil {
 		// update user
 		u.FirstName = getNameFallback(user.FirstName, user.Name)
-		u.LastName = user.LastName
+		u.LastName = pgtype.Text{String: user.LastName, Valid: true}
 		u.Image = pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""}
 		u.Role = role
 
@@ -68,7 +68,7 @@ func (s *Server) upsertUser(
 	// create user
 	u = &models.User{
 		FirstName: getNameFallback(user.FirstName, user.Name),
-		LastName:  user.LastName,
+		LastName:  pgtype.Text{String: user.LastName, Valid: true},
 		Image:     pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""},
 		Email:     user.Email,
 		Role:      role,

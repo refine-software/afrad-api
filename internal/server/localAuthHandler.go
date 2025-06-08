@@ -53,11 +53,11 @@ func (s *Server) register(ctx *gin.Context) {
 
 	userRepo := s.db.User()
 	localAuthRepo := s.db.LocalAuth()
-	otpCodeRepo := s.db.PhoneVerificationCode()
+	otpCodeRepo := s.db.AccountVerificationCode()
 
 	user := &models.User{
 		FirstName: req.FirstName,
-		LastName:  req.LastName,
+		LastName:  pgtype.Text{String: req.LastName, Valid: true},
 		Email:     req.Email,
 		Image:     pgtype.Text{String: imageURL, Valid: imageURL != ""},
 		Role:      getUserRole(req.Email),
@@ -89,7 +89,7 @@ func (s *Server) register(ctx *gin.Context) {
 
 		// generate OTP
 		otp := utils.GenerateRandomOTP()
-		err = otpCodeRepo.Create(ctx, tx, &models.PhoneVerification{
+		err = otpCodeRepo.Create(ctx, tx, &models.AccountVerificationCode{
 			UserID:    int32(userID),
 			OtpCode:   otp,
 			ExpiresAt: time.Now().Add(time.Minute * 5),
@@ -129,7 +129,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	db := s.db.Pool()
 	userRepo := s.db.User()
-	otpCodeRepo := s.db.PhoneVerificationCode()
+	otpCodeRepo := s.db.AccountVerificationCode()
 	localAuthRepo := s.db.LocalAuth()
 
 	// check if email exists in the database
@@ -197,7 +197,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		if err != nil {
 			return err
 		}
-		err = otpCodeRepo.Update(ctx, tx, &models.PhoneVerification{
+		err = otpCodeRepo.Update(ctx, tx, &models.AccountVerificationCode{
 			UserID: int32(userID),
 			IsUsed: true,
 		})

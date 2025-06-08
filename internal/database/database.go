@@ -15,7 +15,7 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
-	PhoneVerificationCode() PhoneVerificationCodeRepository
+	AccountVerificationCode() AccountVerificationCodeRepository
 	LocalAuth() LocalAuthRepository
 	Oauth() OAuthRepository
 	User() UserRepository
@@ -33,13 +33,13 @@ type Querier interface {
 }
 
 type service struct {
-	phoneVerificationCodeRepo PhoneVerificationCodeRepository
-	passwordResetRepo         PasswordResetRepository
-	sessionRepo               SessionRepository
-	localAuthRepo             LocalAuthRepository
-	oAuthRepo                 OAuthRepository
-	userRepo                  UserRepository
-	db                        *pgxpool.Pool
+	accountVerificationCodeRepo AccountVerificationCodeRepository
+	passwordResetRepo           PasswordResetRepository
+	sessionRepo                 SessionRepository
+	localAuthRepo               LocalAuthRepository
+	oAuthRepo                   OAuthRepository
+	userRepo                    UserRepository
+	db                          *pgxpool.Pool
 }
 
 var dbInstance *service
@@ -63,13 +63,13 @@ func New(env *config.Env) Service {
 	}
 
 	dbInstance = &service{
-		db:                        pool,
-		userRepo:                  NewUserRepository(),
-		oAuthRepo:                 NewOAuthRepository(),
-		localAuthRepo:             NewLocalAuthRepository(),
-		sessionRepo:               NewSessionRepository(),
-		passwordResetRepo:         NewPasswordResetRepository(),
-		phoneVerificationCodeRepo: NewPhoneVerificationCodeRepository(),
+		db:                          pool,
+		userRepo:                    NewUserRepository(),
+		oAuthRepo:                   NewOAuthRepository(),
+		localAuthRepo:               NewLocalAuthRepository(),
+		sessionRepo:                 NewSessionRepository(),
+		passwordResetRepo:           NewPasswordResetRepository(),
+		accountVerificationCodeRepo: NewAccountVerificationCodeRepository(),
 	}
 
 	return dbInstance
@@ -95,8 +95,8 @@ func (s *service) PasswordReset() PasswordResetRepository {
 	return s.passwordResetRepo
 }
 
-func (s *service) PhoneVerificationCode() PhoneVerificationCodeRepository {
-	return s.phoneVerificationCodeRepo
+func (s *service) AccountVerificationCode() AccountVerificationCodeRepository {
+	return s.accountVerificationCodeRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {

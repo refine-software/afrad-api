@@ -5,34 +5,34 @@ import (
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
-type PhoneVerificationCodeRepository interface {
+type AccountVerificationCodeRepository interface {
 	// Create phone verification code
 	// columns reqired: otp_code, user_id, expires_at
-	Create(ctx *gin.Context, db Querier, p *models.PhoneVerification) error
+	Create(ctx *gin.Context, db Querier, p *models.AccountVerificationCode) error
 
 	// Update phone verification code,
 	// columns reqired: is_used,
 	// by user_id.
-	Update(ctx *gin.Context, db Querier, p *models.PhoneVerification) error
+	Update(ctx *gin.Context, db Querier, p *models.AccountVerificationCode) error
 
 	// Get phone verification code,
 	// by user_id.
-	Get(ctx *gin.Context, db Querier, userID int32) (*models.PhoneVerification, error)
+	Get(ctx *gin.Context, db Querier, userID int32) (*models.AccountVerificationCode, error)
 
 	// count how many otp codes does the user have
 	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, error)
 }
 
-type phoneVerificationCodeRepo struct{}
+type accountVerificationCodeRepo struct{}
 
-func NewPhoneVerificationCodeRepository() PhoneVerificationCodeRepository {
-	return &phoneVerificationCodeRepo{}
+func NewAccountVerificationCodeRepository() AccountVerificationCodeRepository {
+	return &accountVerificationCodeRepo{}
 }
 
-func (r *phoneVerificationCodeRepo) Create(
+func (r *accountVerificationCodeRepo) Create(
 	ctx *gin.Context,
 	db Querier,
-	p *models.PhoneVerification,
+	p *models.AccountVerificationCode,
 ) error {
 	query := `
 		INSERT INTO phone_verification_codes(otp_code, user_id, expires_at)
@@ -46,10 +46,10 @@ func (r *phoneVerificationCodeRepo) Create(
 	return nil
 }
 
-func (r *phoneVerificationCodeRepo) Update(
+func (r *accountVerificationCodeRepo) Update(
 	ctx *gin.Context,
 	db Querier,
-	p *models.PhoneVerification,
+	p *models.AccountVerificationCode,
 ) error {
 	query := `
 		UPDATE phone_verification_codes
@@ -63,18 +63,18 @@ func (r *phoneVerificationCodeRepo) Update(
 	return nil
 }
 
-func (r *phoneVerificationCodeRepo) Get(
+func (r *accountVerificationCodeRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (*models.PhoneVerification, error) {
+) (*models.AccountVerificationCode, error) {
 	query := `
 		SELECT id, otp_code, is_used, expires_at, created_at
 		FROM phone_verification_codes
 		WHERE user_id = $1;
 	`
 
-	var p models.PhoneVerification
+	var p models.AccountVerificationCode
 	err := db.QueryRow(ctx, query, userID).
 		Scan(&p.ID, &p.OtpCode, &p.IsUsed, &p.ExpiresAt, &p.CreatedAt)
 	if err != nil {
@@ -84,7 +84,7 @@ func (r *phoneVerificationCodeRepo) Get(
 	return &p, nil
 }
 
-func (r *phoneVerificationCodeRepo) CountUserOtpCodes(
+func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 	ctx *gin.Context,
 	db Querier,
 	userID int,
