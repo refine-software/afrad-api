@@ -80,7 +80,7 @@ func (s *Server) setCookie(c *gin.Context, cookieName, cookieVal string) {
 }
 
 func (s *Server) setRefreshCookie(c *gin.Context, refreshToken string) {
-	s.setCookie(c, "refreshToken", refreshToken)
+	s.setCookie(c, "refresh_token", refreshToken)
 }
 
 func getExpTimeAfterDays(numOfDays int) time.Time {
