@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
@@ -48,7 +49,6 @@ func (s *Server) register(ctx *gin.Context) {
 			utils.Fail(ctx, utils.ErrInternal, err)
 			return
 		}
-
 	}
 
 	userRepo := s.db.User()
@@ -59,7 +59,7 @@ func (s *Server) register(ctx *gin.Context) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Email:     req.Email,
-		Image:     imageURL,
+		Image:     pgtype.Text{String: imageURL, Valid: imageURL != ""},
 		Role:      "user",
 	}
 

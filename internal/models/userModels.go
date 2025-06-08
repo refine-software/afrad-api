@@ -1,16 +1,20 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type User struct {
-	ID        int32     `json:"id"`
-	FirstName string    `json:"firstName"`
-	LastName  string    `json:"lastName"`
-	Image     string    `json:"image"`
-	Email     string    `json:"email"`
-	Role      Role      `json:"role"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        int32       `json:"id"`
+	FirstName string      `json:"firstName"`
+	LastName  string      `json:"lastName"`
+	Image     pgtype.Text `json:"image"`
+	Email     string      `json:"email"`
+	Role      Role        `json:"role"`
+	CreatedAt time.Time   `json:"-"`
+	UpdatedAt time.Time   `json:"-"`
 }
 
 type OAuth struct {
