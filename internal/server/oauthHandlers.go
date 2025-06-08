@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/refine-software/afrad-api/internal/auth"
@@ -51,7 +52,7 @@ func (s *Server) upsertUser(
 		// update user
 		u.FirstName = getNameFallback(user.FirstName, user.Name)
 		u.LastName = user.LastName
-		u.Image = user.AvatarURL
+		u.Image = pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""}
 		u.Role = role
 
 		err = userRepo.Update(c, db, u)
@@ -68,7 +69,7 @@ func (s *Server) upsertUser(
 	u = &models.User{
 		FirstName: getNameFallback(user.FirstName, user.Name),
 		LastName:  user.LastName,
-		Image:     user.AvatarURL,
+		Image:     pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""},
 		Email:     user.Email,
 		Role:      role,
 	}
