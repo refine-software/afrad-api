@@ -21,6 +21,12 @@ type LocalAuthRepository interface {
 	// update is_account_verified column to true,
 	// by user_id.
 	UpdateIsAccountVerifiedToTrue(ctx *gin.Context, db Querier, userID int32) error
+
+	CheckUserVerification(
+		ctx *gin.Context,
+		db Querier,
+		userID int32,
+	) (bool, error)
 }
 
 type localAuthRepo struct{}
@@ -85,4 +91,25 @@ func (r *localAuthRepo) UpdateIsAccountVerifiedToTrue(
 		return Parse(err)
 	}
 	return nil
+}
+
+func (r *localAuthRepo) CheckUserVerification(
+	ctx *gin.Context,
+	db Querier,
+	userID int32,
+) (bool, error) {
+	query := `
+		SELECT is_account_verified
+		FROM local_auth
+		WHERE user_id = $1;
+	`
+
+	var isVerified bool
+	err := db.QueryRow(ctx, query, userID).
+		Scan(&isVerified)
+	if err != nil {
+		return false, Parse(err)
+	}
+
+	return isVerified, nil
 }
