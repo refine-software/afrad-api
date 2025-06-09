@@ -11,7 +11,7 @@ func SendVerificationEmail(email, OTP string, env *config.Env) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", env.Email)
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", "Refine Budget Account Verification")
+	m.SetHeader("Subject", "Afrad Account Verification")
 	m.SetBody("text/html", htmlBody)
 
 	d := gomail.NewDialer(
