@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"regexp"
+	"time"
 )
 
 var digits = []byte("1234567890")
@@ -47,4 +48,14 @@ func CheckValidJSON(jsonStr string) bool {
 	}
 	// Check if the JSON object is empty
 	return len(jsonData) > 0
+}
+
+// Get the expiration time after certain number of days added to now().
+func GetExpTimeAfterDays(numOfDays int) time.Time {
+	return time.Now().Add((time.Hour * 24) * time.Duration(numOfDays))
+}
+
+// Get the expiration time after certain number of Minutes added to now().
+func GetExpTimeAfterMins(numOfMins int) time.Time {
+	return time.Now().Add((time.Minute * time.Duration(numOfMins)))
 }

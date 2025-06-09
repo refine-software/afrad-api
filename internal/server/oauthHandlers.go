@@ -148,7 +148,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, apiErr, err)
 		return
 	}
-	sessExpTime := getExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
 	if errors.Is(err, database.ErrNotFound) {
 		session = models.Session{
 			UserID:       u.ID,
@@ -302,7 +302,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 		return
 	}
 
-	refreshExpTime := getExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	refreshExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
 
 	session.RefreshToken = hashedRefresh
 	session.ExpiresAt = refreshExpTime

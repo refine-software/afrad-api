@@ -3,7 +3,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/refine-software/afrad-api/internal/utils"
@@ -12,7 +11,7 @@ import (
 func GenerateToken(tokenSecret string, expInMin int) (string, error) {
 	claims := jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(
-			time.Now().Add(time.Minute * time.Duration(expInMin)),
+			utils.GetExpTimeAfterMins(expInMin),
 		),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -20,7 +19,7 @@ func GenerateToken(tokenSecret string, expInMin int) (string, error) {
 }
 
 func GenerateAccessToken(userID, userRole, accessTokenSecret string, expInMin int) (string, error) {
-	expirationTime := time.Now().Add((time.Minute * time.Duration(expInMin)))
+	expirationTime := utils.GetExpTimeAfterMins(expInMin)
 
 	claims := &AccessClaims{
 		Role: userRole,
@@ -35,7 +34,7 @@ func GenerateAccessToken(userID, userRole, accessTokenSecret string, expInMin in
 }
 
 func GenerateRefreshToken(userID, refreshTokenSecret string, expInDays int) (string, error) {
-	expirationTime := time.Now().Add((time.Hour * 24) * time.Duration(expInDays))
+	expirationTime := utils.GetExpTimeAfterDays(expInDays)
 
 	claims := jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(expirationTime),

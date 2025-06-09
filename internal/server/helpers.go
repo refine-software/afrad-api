@@ -94,11 +94,3 @@ func setEmptyCookie(c *gin.Context) {
 		true,
 	)
 }
-
-func getExpTimeAfterDays(numOfDays int) time.Time {
-	return time.Now().Add((time.Hour * 24) * time.Duration(numOfDays))
-}
-
-func getExpTimeAfterMins(numOfMins int) time.Time {
-	return time.Now().Add((time.Minute * time.Duration(numOfMins)))
-}

@@ -92,7 +92,7 @@ func (s *Server) register(ctx *gin.Context) {
 		err = otpCodeRepo.Create(ctx, tx, &models.AccountVerificationCode{
 			UserID:    int32(userID),
 			OtpCode:   otp,
-			ExpiresAt: time.Now().Add(time.Minute * 5),
+			ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
 		})
 		if err != nil {
 			return err
@@ -275,7 +275,7 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 	// store OTP
 	a := models.AccountVerificationCode{
 		OtpCode:   otp,
-		ExpiresAt: getExpTimeAfterMins(s.env.OTPExpInMin),
+		ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
 		UserID:    user.ID,
 	}
 	err = accVerificationRepo.Create(c, db, &a)
