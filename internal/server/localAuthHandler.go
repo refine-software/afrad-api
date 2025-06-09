@@ -59,7 +59,7 @@ func (s *Server) register(ctx *gin.Context) {
 		FirstName:   req.FirstName,
 		LastName:    pgtype.Text{String: req.LastName, Valid: true},
 		Email:       req.Email,
-		PhoneNumber: pgtype.Text{String: req.PhoneNumber, Valid: true},
+		PhoneNumber: pgtype.Text{String: req.PhoneNumber, Valid: req.PhoneNumber != ""},
 		Image:       pgtype.Text{String: imageURL, Valid: imageURL != ""},
 		Role:        getUserRole(req.Email),
 	}
