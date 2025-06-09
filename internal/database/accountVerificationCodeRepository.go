@@ -6,14 +6,14 @@ import (
 )
 
 type AccountVerificationCodeRepository interface {
-	// Create phone verification code
+	// Create phone verification code,
 	// columns reqired: otp_code, user_id, expires_at
-	Create(ctx *gin.Context, db Querier, p *models.AccountVerificationCode) error
+	Create(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
 
 	// Update phone verification code,
 	// columns reqired: is_used,
 	// by user_id.
-	Update(ctx *gin.Context, db Querier, p *models.AccountVerificationCode) error
+	Update(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
 
 	// Get phone verification code,
 	// by user_id.
@@ -35,7 +35,7 @@ func (r *accountVerificationCodeRepo) Create(
 	p *models.AccountVerificationCode,
 ) error {
 	query := `
-		INSERT INTO phone_verification_codes(otp_code, user_id, expires_at)
+		INSERT INTO account_verification_codes(otp_code, user_id, expires_at)
 		VALUES ($1, $2, $3);
 	`
 	_, err := db.Exec(ctx, query, p.OtpCode, p.UserID, p.ExpiresAt)
@@ -52,7 +52,7 @@ func (r *accountVerificationCodeRepo) Update(
 	p *models.AccountVerificationCode,
 ) error {
 	query := `
-		UPDATE phone_verification_codes
+		UPDATE account_verification_codes
 		SET is_used = $2 
 		WHERE user_id = $1
 	`
@@ -70,18 +70,18 @@ func (r *accountVerificationCodeRepo) Get(
 ) (*models.AccountVerificationCode, error) {
 	query := `
 		SELECT id, otp_code, is_used, expires_at, created_at
-		FROM phone_verification_codes
+		FROM account_verification_codes
 		WHERE user_id = $1;
 	`
 
-	var p models.AccountVerificationCode
+	var a models.AccountVerificationCode
 	err := db.QueryRow(ctx, query, userID).
-		Scan(&p.ID, &p.OtpCode, &p.IsUsed, &p.ExpiresAt, &p.CreatedAt)
+		Scan(&a.ID, &a.OtpCode, &a.IsUsed, &a.ExpiresAt, &a.CreatedAt)
 	if err != nil {
 		return nil, Parse(err)
 	}
 
-	return &p, nil
+	return &a, nil
 }
 
 func (r *accountVerificationCodeRepo) CountUserOtpCodes(
@@ -91,7 +91,7 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 ) (int, error) {
 	query := `
 		SELECT COUNT(*)
-		FROM phone_verification_codes
+		FROM account_verification_codes
 		WHERE user_id = $1;
 	`
 	var userOtps int
