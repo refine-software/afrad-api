@@ -62,6 +62,9 @@ func (r *accountVerificationCodeRepo) Update(
 		UPDATE account_verification_codes
 		SET is_used = $2 
 		WHERE user_id = $1
+		AND id IN (
+			SELECT MAX(id) FROM password_resets
+		)
 	`
 	_, err := db.Exec(ctx, query, p.UserID, p.IsUsed)
 	if err != nil {
@@ -78,7 +81,9 @@ func (r *accountVerificationCodeRepo) Get(
 	query := `
 		SELECT id, otp_code, is_used, expires_at, created_at
 		FROM account_verification_codes
-		WHERE user_id = $1;
+		WHERE user_id = $1
+		ORDER BY id DESC
+		LIMIT 1;
 	`
 
 	var a models.AccountVerificationCode
