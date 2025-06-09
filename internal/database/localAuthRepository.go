@@ -6,6 +6,9 @@ import (
 )
 
 type LocalAuthRepository interface {
+	// fetch the local auth model
+	Get(ctx *gin.Context, db Querier, userID int32) (models.LocalAuth, error)
+
 	// create JWT based authentication,
 	// columns required: user_id, password_hash.
 	Create(ctx *gin.Context, db Querier, l *models.LocalAuth) error
@@ -26,10 +29,26 @@ func NewLocalAuthRepository() LocalAuthRepository {
 	return &localAuthRepo{}
 }
 
+func (r *localAuthRepo) Get(ctx *gin.Context, db Querier, userID int32) (models.LocalAuth, error) {
+	query := `
+	SELECT user_id, is_account_verified, password_hash
+	FROM local_auth
+	WHERE user_id = $1
+	`
+
+	var l models.LocalAuth
+	err := db.QueryRow(ctx, query, userID).Scan(&l.UserID, &l.IsAccountVerified, &l.PasswordHash)
+	if err != nil {
+		return models.LocalAuth{}, Parse(err)
+	}
+
+	return l, nil
+}
+
 func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth) error {
 	query := `
 		INSERT INTO local_auth(user_id, password_hash)
-		VALUES ($1, $2, $3)
+		VALUES ($1, $2)
 	`
 	_, err := db.Exec(ctx, query, l.UserID, l.PasswordHash)
 	if err != nil {
