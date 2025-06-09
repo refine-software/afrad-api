@@ -21,6 +21,13 @@ type AccountVerificationCodeRepository interface {
 
 	// count how many otp codes does the user have
 	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, error)
+
+	// count the number of otp codes a user have in a day
+	CountUserOTPCodesPerDay(
+		ctx *gin.Context,
+		db Querier,
+		userID int32,
+	) (int, error)
 }
 
 type accountVerificationCodeRepo struct{}
@@ -100,4 +107,25 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 		return 0, Parse(err)
 	}
 	return userOtps, nil
+}
+
+func (r *accountVerificationCodeRepo) CountUserOTPCodesPerDay(
+	ctx *gin.Context,
+	db Querier,
+	userID int32,
+) (int, error) {
+	query := `
+	SELECT COUNT(*)
+	FROM account_verification_codes
+	WHERE user_id = $1
+  AND created_at::date = CURRENT_DATE;
+	`
+
+	var count int
+	err := db.QueryRow(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, Parse(err)
+	}
+
+	return count, nil
 }
