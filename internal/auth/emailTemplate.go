@@ -59,10 +59,10 @@ var emailTemplate = `
 </head>
 <body>
     <div class="container">
-        <p class="header">Account Verification</p>
+        <p class="header">OTP Email</p>
         <p class="text">Your One Time Password (OTP) is:</p>
         <p class="otp-box">%s</p>
-        <p class="text">Please enter this code to verify your account. This OTP will expire in 5 minutes.</p>
+        <p class="text">Please don't send this code to anyone. This OTP will expire in 5 minutes.</p>
         <p class="footer">If you didn’t request this, you can safely ignore this email.</p>
     </div>
 </body>
