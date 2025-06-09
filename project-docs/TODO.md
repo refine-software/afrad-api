@@ -31,3 +31,4 @@
 - [ ] In registeration, images are being uploaded to s3 while the database transactions might fail.
 - [ ] Stress test all endpoints and make sure to rollback like in the resend verification endpoint.
 - [ ] Scan files sent, they have to be images and have to be under a certain size.
+- [ ] S3 images aren't accessible in the browser, check bucket permissions.
