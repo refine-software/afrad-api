@@ -36,7 +36,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		auth.POST("/register", s.register)
 		auth.POST("/verify-account", s.verifyAccount)
-		auth.POST("/resend-verification-otp")
+		auth.POST("/resend-verification-otp", s.resendVerificationOTP)
 		auth.POST("/login")
 		auth.POST("/reset-password")
 		auth.POST("/reset-password/confirm")

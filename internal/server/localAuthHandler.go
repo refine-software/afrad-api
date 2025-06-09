@@ -191,3 +191,114 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	utils.Success(ctx, "your account has been verified", nil)
 }
+
+type resendVerificationOTPReq struct {
+	Email string `json:"email" binding:"required"`
+}
+
+func (s *Server) resendVerificationOTP(c *gin.Context) {
+	// get user email
+	var req resendVerificationOTPReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Fail(c, utils.ErrBadRequest, err)
+		return
+	}
+
+	accVerificationRepo := s.db.AccountVerificationCode()
+	userRepo := s.db.User()
+	localAuthRepo := s.db.LocalAuth()
+	db, err := s.db.BeginTx(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+	committed := false
+	defer func() {
+		if p := recover(); p != nil {
+			_ = db.Rollback(c)
+			panic(p)
+		} else if !committed {
+			_ = db.Rollback(c)
+		}
+	}()
+
+	// get user
+	user, err := userRepo.Get(c, db, req.Email)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	localAuth, err := localAuthRepo.Get(c, db, user.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	if localAuth.IsAccountVerified {
+		utils.Fail(
+			c,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "Account is already verified. No need to resend verification email.",
+			},
+			nil,
+		)
+		return
+	}
+
+	// limit verification otps to 10 per day
+	numOfOTPs, err := accVerificationRepo.CountUserOTPCodesPerDay(c, db, user.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	if numOfOTPs > s.env.MaxOTPRequestsPerDay {
+		utils.Fail(
+			c,
+			&utils.APIError{
+				Code:    http.StatusForbidden,
+				Message: "You've reached the limit of otp requests",
+			},
+			err,
+		)
+		return
+	}
+
+	// generate OTP
+	otp := utils.GenerateRandomOTP()
+
+	// store OTP
+	a := models.AccountVerificationCode{
+		OtpCode:   otp,
+		ExpiresAt: getExpTimeAfterMins(s.env.OTPExpInMin),
+		UserID:    user.ID,
+	}
+	err = accVerificationRepo.Create(c, db, &a)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	// send verificaion OTP
+	err = auth.SendVerificationEmail(user.Email, otp, s.env)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	err = db.Commit(c)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+	committed = true
+
+	// responed
+	utils.Success(c, "check your email for otp", nil)
+}
