@@ -98,7 +98,7 @@ func (s *Server) register(ctx *gin.Context) {
 			return err
 		}
 
-		err = auth.SendVerificationEmail(req.Email, otp, s.env)
+		err = auth.SendOtpEmail(req.Email, otp, s.env)
 		if err != nil {
 			return err
 		}
@@ -264,7 +264,7 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 				Code:    http.StatusForbidden,
 				Message: "You've reached the limit of otp requests",
 			},
-			err,
+			nil,
 		)
 		return
 	}
@@ -286,7 +286,7 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 	}
 
 	// send verificaion OTP
-	err = auth.SendVerificationEmail(user.Email, otp, s.env)
+	err = auth.SendOtpEmail(user.Email, otp, s.env)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
