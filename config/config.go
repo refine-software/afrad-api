@@ -9,8 +9,10 @@ import (
 
 type Env struct {
 	// APP
-	Environment string `mapstructure:"APP_ENV"`
-	Port        int    `mapstructure:"PORT"`
+	Environment          string `mapstructure:"APP_ENV"`
+	Port                 int    `mapstructure:"PORT"`
+	MaxOTPRequestsPerDay int    `mapstructure:"MAX_OTP_REQUESTS_PER_DAY"`
+	OTPExpInMin          int    `mapstructure:"OTP_EXP_IN_MIN"`
 
 	// DB
 	DBHost     string `mapstructure:"DB_HOST"`
@@ -45,12 +47,6 @@ type Env struct {
 	// Email
 	Email    string `mapstructure:"EMAIL"`
 	Password string `mapstructure:"PASSWORD"`
-	AppURL   string `mapstructure:"APP_URL"`
-
-	// Twilio
-	TwilioAccountSID  string `mapstructure:"TWILIO_ACCOUNT_SID"`
-	TwilioAuthToken   string `mapstructure:"TWILIO_AUTH_TOKEN"`
-	TwilioSandboxFrom string `mapstructure:"TWILIO_SANDBOX_FROM"`
 }
 
 func NewEnv() *Env {
@@ -101,6 +97,8 @@ func bindEnvVariables() {
 	vars := []string{
 		"APP_ENV",
 		"PORT",
+		"MAX_OTP_REQUESTS_PER_DAY",
+		"OTP_EXP_IN_MIN",
 		// DB
 		"DB_HOST",
 		"DB_PORT",
@@ -125,14 +123,9 @@ func bindEnvVariables() {
 		"REFRESH_TOKEN_EXP_IN_DAYS",
 		// Hashing
 		"HASHING_SECRET",
-		// Twilio
-		"TWILIO_ACCOUNT_SID",
-		"TWILIO_AUTH_TOKEN",
-		"TWILIO_SANDBOX_FROM",
 		// email
 		"EMAIL",
 		"PASSWORD",
-		"APP_URL",
 	}
 
 	for _, key := range vars {
