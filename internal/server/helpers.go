@@ -103,7 +103,7 @@ type ImageUpload struct {
 	Header *multipart.FileHeader
 }
 
-func getImageFile(ctx *gin.Context) (*ImageUpload, error) {
+func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
 	// set the form to take 5MB or less files
 	const maxUpload = 5 << 20 // 5 MiB
 	_ = ctx.Request.ParseMultipartForm(maxUpload)

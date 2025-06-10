@@ -114,7 +114,7 @@ func (s *Server) register(ctx *gin.Context) {
 		return
 	}
 
-	utils.Created(ctx, "user created", nil)
+	utils.Created(ctx, "user created")
 }
 
 type verifyAccountReq struct {
@@ -192,7 +192,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, "your account has been verified", nil)
+	utils.Success(ctx, "your account has been verified")
 }
 
 type resendVerificationOTPReq struct {
@@ -303,7 +303,7 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 	committed = true
 
 	// responed
-	utils.Success(c, "check your email for otp", nil)
+	utils.Success(c, "check your email for otp")
 }
 
 type loginReq struct {
@@ -413,7 +413,7 @@ func (s *Server) login(ctx *gin.Context) {
 
 	s.setRefreshCookie(ctx, newRefreshToken)
 
-	utils.Success(ctx, "you've logged in successfully", loginRes{
+	utils.Success(ctx, loginRes{
 		AccessToken: newAccessToken,
 		User:        *user,
 	})
