@@ -37,6 +37,7 @@ var (
 	ErrHeaderMissing = func(headerName string) *APIError {
 		return NewAPIError(http.StatusBadRequest, fmt.Sprintf("%s header is missing", headerName))
 	}
+	ErrInvalidCredentials = NewAPIError(http.StatusUnauthorized, "invalid credentials")
 
 	// DB Errors
 	ErrForeignKeyViolation = func(columnName string) *APIError {
