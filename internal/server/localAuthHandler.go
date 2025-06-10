@@ -37,7 +37,7 @@ type registerReq struct {
 // @Success      201  {string}  string  "user created"
 // @Failure      400  {object}  utils.APIError  "Invalid request data"
 // @Failure      500  {object}  utils.APIError  "Internal server error"
-// @Router       /register [post]
+// @Router       /auth/register [post]
 func (s *Server) register(ctx *gin.Context) {
 	// get user info
 	var req registerReq
@@ -147,7 +147,7 @@ type verifyAccountReq struct {
 // @Failure      400  {object}  utils.APIError  "Bad request or invalid OTP"
 // @Failure      401  {object}  utils.APIError  "OTP expired"
 // @Failure      500  {object}  utils.APIError  "Internal server error"
-// @Router       /verify-account [post]
+// @Router       /auth/verify-account [post]
 func (s *Server) verifyAccount(ctx *gin.Context) {
 	var req verifyAccountReq
 	err := ctx.ShouldBindJSON(&req)
@@ -256,8 +256,8 @@ type resendVerificationOTPReq struct {
 // @Failure      400  {object}  utils.APIError  "Bad request, invalid input, or already verified"
 // @Failure      403  {object}  utils.APIError  "OTP request limit reached"
 // @Failure      500  {object}  utils.APIError  "Internal server error"
-// @Router       /resend-verification [post]
-func (s *Server) resendVerificationOTP(c *gin.Context) {
+// @Router       /auth/resend-verification [post]
+func (s *Server) resendVerification(c *gin.Context) {
 	// get user email
 	var req resendVerificationOTPReq
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -23,11 +23,11 @@ type loginReq struct {
 // @Accept       json
 // @Produce      json
 // @Param        loginReq  body      loginReq       true  "Login request"
-// @Success      200       {object}  loginRes       "Successful login with access token and user info"
+// @Success      200       {object}  loginResDocs       "Successful login with access token and user info"
 // @Failure      400       {object}  utils.APIError "Invalid request body"
 // @Failure      401       {object}  utils.APIError "Invalid credentials or unverified account"
 // @Failure      500       {object}  utils.APIError "Internal server error"
-// @Router       /login [post]
+// @Router       /auth/login [post]
 func (s *Server) login(ctx *gin.Context) {
 	var req loginReq
 	err := ctx.ShouldBindJSON(&req)
@@ -138,14 +138,14 @@ func (s *Server) login(ctx *gin.Context) {
 
 // @Summary      Logout
 // @Description  Logs out the currently authenticated user by revoking the session and clearing the refresh token cookie.
-// @Tags         Auth
+// @Tags         User
 // @Security     BearerAuth
 // @Produce      json
 // @Success      204  "Successfully logged out"
 // @Failure      400  {object}  utils.APIError  "Missing refresh token or invalid request"
 // @Failure      401  {object}  utils.APIError  "Unauthorized or invalid session"
 // @Failure      500  {object}  utils.APIError  "Internal server error"
-// @Router       /logout [post]
+// @Router       /user/logout [post]
 func (s *Server) logout(c *gin.Context) {
 	claims := auth.GetAccessClaims(c)
 	if claims == nil {
@@ -204,13 +204,13 @@ func (s *Server) logout(c *gin.Context) {
 
 // @Summary      Logout from All Sessions
 // @Description  Revokes all active sessions for the authenticated user across all devices.
-// @Tags         Auth
+// @Tags         User
 // @Security     BearerAuth
 // @Produce      json
 // @Success      204  "Successfully logged out from all sessions"
 // @Failure      401  {object}  utils.APIError  "Unauthorized or invalid token"
 // @Failure      500  {object}  utils.APIError  "Internal server error"
-// @Router       /logout/all [post]
+// @Router       /user/logout/all [post]
 func (s *Server) logoutFromAllSessions(c *gin.Context) {
 	claims := auth.GetAccessClaims(c)
 	if claims == nil {

@@ -38,7 +38,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		auth.POST("/register", s.register)
 		auth.POST("/verify-account", s.verifyAccount)
-		auth.POST("/resend-verification-otp", s.resendVerificationOTP)
+		auth.POST("/resend-verification", s.resendVerification)
 		auth.POST("/login", s.login)
 		auth.POST("/reset-password", s.passwordReset)
 		auth.POST("/reset-password/confirm", s.resetPasswordConfirm)
@@ -68,7 +68,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 		user.GET("/review")
 		user.PATCH("/user/notificatoin-preferences")
 		user.POST("/logout", s.logout)
-		user.POST("/logout-all", s.logoutFromAllSessions)
+		user.POST("/logout/all", s.logoutFromAllSessions)
 	}
 
 	cart := protected.Group("/cart")

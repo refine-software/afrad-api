@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
 args_bin = []
 bin = "./afrad"
-cmd = "swag init --dir ./cmd/api,./internal/utils/,./internal/server/,./internal/database/ && go build -o afrad ./cmd/api/main.go"
+cmd = "swag init --dir ./cmd/api,./internal/utils/,./internal/server/,./internal/database/,./internal/models/ && go build -o afrad ./cmd/api/main.go"
 delay = 1000
 exclude_dir = [
   "assets",

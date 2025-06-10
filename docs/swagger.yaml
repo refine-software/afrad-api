@@ -1,4 +1,101 @@
 basePath: /
+definitions:
+  models.Role:
+    enum:
+    - admin
+    - user
+    type: string
+    x-enum-varnames:
+    - RoleAdmin
+    - RoleUser
+  server.PasswordResetConfirmReq:
+    properties:
+      email:
+        type: string
+      newPassword:
+        type: string
+      otp:
+        type: string
+    required:
+    - email
+    - newPassword
+    - otp
+    type: object
+  server.loginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  server.loginResDocs:
+    properties:
+      accessToken:
+        type: string
+      user:
+        $ref: '#/definitions/server.userDocs'
+    type: object
+  server.passwordResetReq:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  server.refreshTokenReq:
+    properties:
+      userId:
+        type: integer
+    type: object
+  server.refreshTokenRes:
+    properties:
+      accessToken:
+        type: string
+    type: object
+  server.resendVerificationOTPReq:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  server.userDocs:
+    properties:
+      PhoneNumber:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      lastName:
+        type: string
+      role:
+        $ref: '#/definitions/models.Role'
+    type: object
+  server.verifyAccountReq:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+    required:
+    - email
+    - otp
+    type: object
+  utils.APIError:
+    properties:
+      code:
+        type: integer
+      msg:
+        type: string
+    type: object
 host: 127.0.0.1:8080
 info:
   contact:
@@ -10,7 +107,376 @@ info:
     url: https://img.shields.io/badge/License-MIT-yellow.svg
   title: Afrad API
   version: "1.0"
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user using email and password. Returns an access token
+        and user data.
+      parameters:
+      - description: Login request
+        in: body
+        name: loginReq
+        required: true
+        schema:
+          $ref: '#/definitions/server.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login with access token and user info
+          schema:
+            $ref: '#/definitions/server.loginResDocs'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: Invalid credentials or unverified account
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Email/Password Login
+      tags:
+      - Auth
+  /auth/password-reset:
+    post:
+      consumes:
+      - application/json
+      description: Generates and sends a password reset OTP to the user's email if
+        the account exists and is verified. Limits OTP requests per day.
+      parameters:
+      - description: User Email
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/server.passwordResetReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: check your email
+          schema:
+            type: string
+        "400":
+          description: Bad request or user not verified or email not found
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "403":
+          description: OTP request limit exceeded
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Request Password Reset OTP
+      tags:
+      - Auth
+  /auth/password-reset/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirms password reset by verifying the OTP and updating the user's
+        password.
+      parameters:
+      - description: New password, OTP, and Email
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/server.PasswordResetConfirmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: password changed
+          schema:
+            type: string
+        "400":
+          description: Bad request, wrong OTP, or missing fields
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: OTP expired or unauthorized
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Confirm Password Reset
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Rotates a valid refresh token and returns a new access token. Requires
+        refresh token in cookie.
+      parameters:
+      - description: User ID
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/server.refreshTokenReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New access token
+          schema:
+            $ref: '#/definitions/server.refreshTokenRes'
+        "400":
+          description: Bad request or missing refresh_token cookie
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: Invalid, expired, or revoked session
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      security:
+      - RefreshTokenCookie: []
+      summary: Refresh Tokens
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Registers a new user with optional profile image and sends a verification
+        OTP via email.
+      parameters:
+      - description: First Name
+        in: formData
+        name: firstName
+        required: true
+        type: string
+      - description: Last Name
+        in: formData
+        name: lastName
+        required: true
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: Phone Number
+        in: formData
+        name: phoneNumber
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Optional Profile Image
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: user created
+          schema:
+            type: string
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Register User
+      tags:
+      - Auth
+  /auth/resend-verification:
+    post:
+      consumes:
+      - application/json
+      description: Resends an OTP code to a user's email if the account is not yet
+        verified.
+      parameters:
+      - description: Email for which to resend OTP
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/server.resendVerificationOTPReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: check your email for otp
+          schema:
+            type: string
+        "400":
+          description: Bad request, invalid input, or already verified
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "403":
+          description: OTP request limit reached
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Resend Verification OTP
+      tags:
+      - Auth
+  /auth/verify-account:
+    post:
+      consumes:
+      - application/json
+      description: Verifies a user's account using email and OTP.
+      parameters:
+      - description: Verification Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/server.verifyAccountReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: your account has been verified
+          schema:
+            type: string
+        "400":
+          description: Bad request or invalid OTP
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: OTP expired
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Verify Account
+      tags:
+      - Auth
+  /oauth/google/callback:
+    get:
+      consumes:
+      - application/json
+      description: Handles the Google OAuth callback, authenticates the user, and
+        returns a JWT access token.
+      parameters:
+      - description: OAuth authorization code
+        in: query
+        name: code
+        required: true
+        type: string
+      - description: OAuth state (if used)
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful login with JWT token and user data
+          schema:
+            $ref: '#/definitions/server.loginResDocs'
+        "400":
+          description: Bad request or invalid input
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: Unauthorized - Invalid OAuth token
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Google OAuth Callback
+      tags:
+      - OAuth
+  /oauth/google/login:
+    get:
+      consumes:
+      - application/json
+      description: Redirects the user to Google's OAuth 2.0 login screen.
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Redirect to Google
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      summary: Start Google OAuth Login
+      tags:
+      - OAuth
+  /user/logout:
+    post:
+      description: Logs out the currently authenticated user by revoking the session
+        and clearing the refresh token cookie.
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Successfully logged out
+        "400":
+          description: Missing refresh token or invalid request
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "401":
+          description: Unauthorized or invalid session
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      security:
+      - BearerAuth: []
+      summary: Logout
+      tags:
+      - User
+  /user/logout/all:
+    post:
+      description: Revokes all active sessions for the authenticated user across all
+        devices.
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Successfully logged out from all sessions
+        "401":
+          description: Unauthorized or invalid token
+          schema:
+            $ref: '#/definitions/utils.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/utils.APIError'
+      security:
+      - BearerAuth: []
+      summary: Logout from All Sessions
+      tags:
+      - User
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer {your_jwt_token}" to authenticate.

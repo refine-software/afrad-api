@@ -19,7 +19,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Success      302  {string}  string  "Redirect to Google"
-// @Failure      500  {object}  APIError  "Internal Server Error"
+// @Failure      500  {object}  utils.APIError  "Internal Server Error"
 // @Router       /oauth/google/login [get]
 func (s *Server) loginWithGoogle(c *gin.Context) {
 	q := c.Request.URL.Query()
@@ -112,7 +112,7 @@ type loginRes struct {
 // @Produce      json
 // @Param        code   query     string  true  "OAuth authorization code"
 // @Param        state  query     string  false "OAuth state (if used)"
-// @Success      200    {object}  loginRes   "Successful login with JWT token and user data"
+// @Success      200    {object}  loginResDocs   "Successful login with JWT token and user data"
 // @Failure      400    {object}  utils.APIError  "Bad request or invalid input"
 // @Failure      401    {object}  utils.APIError  "Unauthorized - Invalid OAuth token"
 // @Failure      500    {object}  utils.APIError  "Internal Server Error"
