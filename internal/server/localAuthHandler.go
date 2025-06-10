@@ -31,24 +31,23 @@ func (s *Server) register(ctx *gin.Context) {
 		return
 	}
 
-	// upload image if exists
-	var imageURL string
-	file, fileHeader, err := ctx.Request.FormFile("image")
-	if err != nil {
-		if err == http.ErrMissingFile {
-			file = nil
-			fileHeader = nil
+	imgURL := pgtype.Text{String: "", Valid: false}
+	imgUpload, apiErr := getImageFile(ctx)
+	if apiErr != nil {
+		utils.Fail(ctx, apiErr, nil)
+		return
+	}
+	if imgUpload != nil {
+		defer imgUpload.File.Close()
 
-		} else {
-			utils.Fail(ctx, utils.ErrBadRequest, err)
-			return
-		}
-	} else {
-		imageURL, err = s.s3.UploadImage(ctx, file, fileHeader)
+		var uploadedURL string
+		uploadedURL, err = s.s3.UploadImage(ctx, imgUpload.File, imgUpload.Header)
 		if err != nil {
 			utils.Fail(ctx, utils.ErrInternal, err)
 			return
 		}
+		imgURL.String = uploadedURL
+		imgURL.Valid = true
 	}
 
 	userRepo := s.db.User()
@@ -60,7 +59,7 @@ func (s *Server) register(ctx *gin.Context) {
 		LastName:    pgtype.Text{String: req.LastName, Valid: true},
 		Email:       req.Email,
 		PhoneNumber: pgtype.Text{String: req.PhoneNumber, Valid: req.PhoneNumber != ""},
-		Image:       pgtype.Text{String: imageURL, Valid: imageURL != ""},
+		Image:       imgURL,
 		Role:        getUserRole(req.Email),
 	}
 
@@ -108,6 +107,9 @@ func (s *Server) register(ctx *gin.Context) {
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
 		utils.Fail(ctx, apiErr, err)
+		if imgURL.String != "" {
+			_ = s.s3.DeleteImageByURL(ctx, imgURL.String)
+		}
 		return
 	}
 

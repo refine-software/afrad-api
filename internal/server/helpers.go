@@ -1,6 +1,9 @@
 package server
 
 import (
+	"errors"
+	"mime/multipart"
+	"net/http"
 	"slices"
 	"strings"
 	"time"
@@ -93,4 +96,48 @@ func setEmptyCookie(c *gin.Context) {
 		false,
 		true,
 	)
+}
+
+type ImageUpload struct {
+	File   multipart.File
+	Header *multipart.FileHeader
+}
+
+func getImageFile(ctx *gin.Context) (*ImageUpload, error) {
+	// set the form to take 5MB or less files
+	const maxUpload = 5 << 20 // 5 MiB
+	_ = ctx.Request.ParseMultipartForm(maxUpload)
+
+	// fetch image from request
+	file, header, err := ctx.Request.FormFile("image")
+	if errors.Is(err, http.ErrMissingFile) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, &utils.APIError{
+			Code:    http.StatusInternalServerError,
+			Message: "unable to parse form file",
+		}
+	}
+
+	if header.Size > maxUpload {
+		return nil, &utils.APIError{
+			Code:    utils.ErrBadRequest.Code,
+			Message: "image size is bigger than allowed",
+		}
+	}
+
+	contentType := header.Header.Get("Content-Type")
+	if !slices.Contains([]string{"image/png", "image/jpeg", "image/webp"}, contentType) {
+		return nil, &utils.APIError{
+			Code:    utils.ErrBadRequest.Code,
+			Message: "this type of file is not allowed",
+		}
+	}
+
+	return &ImageUpload{
+		File:   file,
+		Header: header,
+	}, nil
 }
