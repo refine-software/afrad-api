@@ -8,15 +8,15 @@
 
 ### JWT
 
-| DONE | Method | Endpoint                        | Description                                 |
-| ---- | ------ | ------------------------------- | ------------------------------------------- |
-| ✅   | `POST` | `/auth/register`                | Register a new user                         |
-| ✅   | `POST` | `/auth/verify-account`          | Verify phone number to activate account     |
-| ❌   | `POST` | `/auth/resend-verification-otp` | Resend verification otp to activate account |
-| ❌   | `POST` | `/auth/login`                   | Login and receive JWT                       |
-| ❌   | `POST` | `/auth/reset-password`          | Request a password reset                    |
-| ❌   | `POST` | `/auth/reset-password/confirm`  | Set a new password                          |
-| ✅   | `POST` | `/auth/refresh`                 | Refresh the access and refresh tokens       |
+| DONE | Method | Endpoint                       | Description                                 |
+| ---- | ------ | ------------------------------ | ------------------------------------------- |
+| ✅   | `POST` | `/auth/register`               | Register a new user                         |
+| ✅   | `POST` | `/auth/verify-account`         | Verify phone number to activate account     |
+| ✅   | `POST` | `/auth/resend-verification`    | Resend verification otp to activate account |
+| ✅   | `POST` | `/auth/login`                  | Login and receive JWT                       |
+| ✅   | `POST` | `/auth/reset-password`         | Request a password reset                    |
+| ✅   | `POST` | `/auth/reset-password/confirm` | Set a new password                          |
+| ✅   | `POST` | `/auth/refresh`                | Refresh the access and refresh tokens       |
 
 ### Oauth
 
@@ -37,7 +37,7 @@
 | ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews                 |
 | ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preferences  |
 | ✅   | `POST`   | `/user/logout`                   | Revoke the current session        |
-| ✅   | `POST`   | `/user/logout-all`               | Revoke all sessions               |
+| ✅   | `POST`   | `/user/logout/all`               | Revoke all sessions               |
 
 ## Product
 
