@@ -123,7 +123,7 @@ func getImageFile(ctx *gin.Context) (*ImageUpload, error) {
 
 	if header.Size > maxUpload {
 		return nil, &utils.APIError{
-			Code:    utils.ErrBadRequest.Code,
+			Code:    http.StatusBadRequest,
 			Message: "image size is bigger than allowed",
 		}
 	}
@@ -131,7 +131,7 @@ func getImageFile(ctx *gin.Context) (*ImageUpload, error) {
 	contentType := header.Header.Get("Content-Type")
 	if !slices.Contains([]string{"image/png", "image/jpeg", "image/webp"}, contentType) {
 		return nil, &utils.APIError{
-			Code:    utils.ErrBadRequest.Code,
+			Code:    http.StatusBadRequest,
 			Message: "this type of file is not allowed",
 		}
 	}

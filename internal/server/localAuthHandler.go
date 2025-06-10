@@ -137,7 +137,14 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	// check if email exists in the database
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
 	if errors.Is(err, database.ErrNotFound) {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
+		utils.Fail(
+			ctx,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "email not found",
+			},
+			err,
+		)
 		return
 	}
 
@@ -160,13 +167,27 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	// check if requested otp is the same as what we have in the database
 	if otp.OtpCode != req.OTP {
-		utils.Fail(ctx, utils.ErrBadRequest, errors.New("wrong OTP code, Try again"))
+		utils.Fail(
+			ctx,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "wrong OTP, try again",
+			},
+			nil,
+		)
 		return
 	}
 
 	// check if otp code is expired
 	if time.Now().After(otp.ExpiresAt) {
-		utils.Fail(ctx, utils.ErrUnauthorized, errors.New("your OTP is expired"))
+		utils.Fail(
+			ctx,
+			&utils.APIError{
+				Code:    http.StatusUnauthorized,
+				Message: "OTP is expired, try resend another one",
+			},
+			nil,
+		)
 		return
 	}
 
