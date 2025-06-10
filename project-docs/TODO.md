@@ -18,6 +18,7 @@
 ## API Features
 
 - [ ] We need pagination on a lot of endpoints, try to make a reusable function or a struct to make implementing pagination more simple.
+- [ ] We need a better logger, something like zap.
 
 ## Database
 
@@ -25,10 +26,10 @@
 
 ## Bugs/Issues
 
-- [ ] Session management is broken, the user is not reusing a session and we're not removing them, so the number of session will keep on growing.
+- [x] Session management is broken, the user is not reusing a session and we're not removing them, so the number of session will keep on growing.
 - [ ] Implement some kind of a tracer, when a database level error happens there is no way to know where this error is coming from.
 - [ ] User creation in oAuth required phone number.
 - [ ] In registeration, images are being uploaded to s3 while the database transactions might fail.
 - [ ] Stress test all endpoints and make sure to rollback like in the resend verification endpoint.
 - [ ] Scan files sent, they have to be images and have to be under a certain size.
-- [ ] S3 images aren't accessible in the browser, check bucket permissions.
+- [x] S3 images aren't accessible in the browser, check bucket permissions.
