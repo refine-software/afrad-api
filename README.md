@@ -11,6 +11,8 @@ Afrad is a RESTful API for a clothing e-commerce platform. It handles user authe
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
 - [Goose](https://github.com/pressly/goose) (for migrations)
+- [Air](https://github.com/air-verse/air) (for development)
+- [Swag](https://github.com/swaggo/swag) (for development)
 
 ### Environment Variables
 
