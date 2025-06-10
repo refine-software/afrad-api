@@ -22,7 +22,6 @@ RUN apk add --no-cache tzdata
 COPY --from=builder /app/main .
 
 ENV PORT=8080
-ENV APP_ENV=prod
 
 EXPOSE 8080
 
