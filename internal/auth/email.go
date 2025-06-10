@@ -5,13 +5,13 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-func SendVerificationEmail(email, OTP string, env *config.Env) error {
+func SendOtpEmail(email, OTP string, env *config.Env) error {
 	htmlBody := generateTemplate(OTP)
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", env.Email)
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", "Afrad Account Verification")
+	m.SetHeader("Subject", "Afrad OTP Email")
 	m.SetBody("text/html", htmlBody)
 
 	d := gomail.NewDialer(

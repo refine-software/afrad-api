@@ -38,8 +38,8 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 		auth.POST("/verify-account", s.verifyAccount)
 		auth.POST("/resend-verification-otp", s.resendVerificationOTP)
 		auth.POST("/login")
-		auth.POST("/reset-password")
-		auth.POST("/reset-password/confirm")
+		auth.POST("/reset-password", s.passwordReset)
+		auth.POST("/reset-password/confirm", s.resetPasswordConfirm)
 		auth.POST("/refresh", s.refreshTokens)
 	}
 
