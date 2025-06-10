@@ -1,0 +1,27 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Afrad is a RESTful API for a clothing e-commerce platform.",
+        "title": "Afrad API",
+        "contact": {
+            "name": "Ali Jabar",
+            "email": "ali.jabar@refinesoftware.net"
+        },
+        "license": {
+            "name": "MIT License",
+            "url": "https://img.shields.io/badge/License-MIT-yellow.svg"
+        },
+        "version": "1.0"
+    },
+    "host": "127.0.0.1:8080",
+    "basePath": "/",
+    "paths": {},
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer {your_jwt_token}\" to authenticate.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

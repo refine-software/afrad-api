@@ -1,0 +1,20 @@
+basePath: /
+host: 127.0.0.1:8080
+info:
+  contact:
+    email: ali.jabar@refinesoftware.net
+    name: Ali Jabar
+  description: Afrad is a RESTful API for a clothing e-commerce platform.
+  license:
+    name: MIT License
+    url: https://img.shields.io/badge/License-MIT-yellow.svg
+  title: Afrad API
+  version: "1.0"
+paths: {}
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer {your_jwt_token}" to authenticate.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
