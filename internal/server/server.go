@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/refine-software/afrad-api/config"
 	"github.com/refine-software/afrad-api/internal/auth"
@@ -23,6 +24,10 @@ type Server struct {
 
 func NewServer() *http.Server {
 	env := config.NewEnv()
+
+	if env.Environment == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	s3Storage, err := s3.NewS3Storage(env)
 	if err != nil {
