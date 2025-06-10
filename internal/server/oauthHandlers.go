@@ -2,20 +2,25 @@ package server
 
 import (
 	"errors"
-	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
-	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
+// @Summary      Start Google OAuth Login
+// @Description  Redirects the user to Google's OAuth 2.0 login screen.
+// @Tags         OAuth
+// @Accept       json
+// @Produce      json
+// @Success      302  {string}  string  "Redirect to Google"
+// @Failure      500  {object}  APIError  "Internal Server Error"
+// @Router       /oauth/google/login [get]
 func (s *Server) loginWithGoogle(c *gin.Context) {
 	q := c.Request.URL.Query()
 	q.Add("provider", "google")
@@ -100,6 +105,18 @@ type loginRes struct {
 	User        models.User `json:"user"`
 }
 
+// @Summary      Google OAuth Callback
+// @Description  Handles the Google OAuth callback, authenticates the user, and returns a JWT access token.
+// @Tags         OAuth
+// @Accept       json
+// @Produce      json
+// @Param        code   query     string  true  "OAuth authorization code"
+// @Param        state  query     string  false "OAuth state (if used)"
+// @Success      200    {object}  loginRes   "Successful login with JWT token and user data"
+// @Failure      400    {object}  utils.APIError  "Bad request or invalid input"
+// @Failure      401    {object}  utils.APIError  "Unauthorized - Invalid OAuth token"
+// @Failure      500    {object}  utils.APIError  "Internal Server Error"
+// @Router       /oauth/google/callback [get]
 func (s *Server) googleCallback(c *gin.Context) {
 	user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 	if err != nil {
@@ -187,225 +204,4 @@ func (s *Server) googleCallback(c *gin.Context) {
 		AccessToken: accessToken,
 		User:        *u,
 	})
-}
-
-type refreshTokenReq struct {
-	UserID int32 `json:"userId"`
-}
-
-type refreshTokenRes struct {
-	AccessToken string `json:"accessToken"`
-}
-
-func (s *Server) refreshTokens(c *gin.Context) {
-	var req refreshTokenReq
-	err := c.ShouldBindJSON(&req)
-	if err != nil {
-		utils.Fail(c, utils.ErrBadRequest, err)
-		return
-	}
-
-	// Accept a refresh token and a user agent
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		utils.Fail(
-			c,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "refresh_token cookie is required",
-			},
-			err,
-		)
-		return
-	}
-
-	userAgent := getHeader(c, "User-Agent")
-	if userAgent == "" {
-		return
-	}
-
-	sessionRepo := s.db.Session()
-	userRepo := s.db.User()
-	db, err := s.db.BeginTx(c)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			_ = db.Rollback(c)
-			panic(p)
-		}
-	}()
-
-	// Validate the refresh token:
-	// 		- exists in the database
-	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, req.UserID, userAgent)
-	if err != nil {
-		utils.Fail(
-			c,
-			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			err,
-		)
-		return
-	}
-	// 		- not expired
-	if time.Now().After(session.ExpiresAt) {
-		utils.Fail(
-			c,
-			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			err,
-		)
-		return
-	}
-	// 		- not revoked
-	if session.Revoked {
-		utils.Fail(
-			c,
-			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			err,
-		)
-		return
-	}
-
-	// validate refresh token
-	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.HashSecret); !ok {
-		utils.Fail(
-			c,
-			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			errors.New("couldn't verify the refresh token"),
-		)
-		return
-	}
-
-	// get user Role
-	role, err := userRepo.GetRole(c, db, session.UserID)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	userID := strconv.Itoa(int(session.UserID))
-
-	// Rotate the refresh token
-	newAccess, newRefresh, err := s.generateTokens(userID, string(role))
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	hashedRefresh, err := utils.HashToken(newRefresh, s.env.HashSecret)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	refreshExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-
-	session.RefreshToken = hashedRefresh
-	session.ExpiresAt = refreshExpTime
-	err = sessionRepo.Update(c, db, &session)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	err = db.Commit(c)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	// Return access and refresh tokens
-	s.setRefreshCookie(c, newRefresh)
-
-	utils.Success(c, refreshTokenRes{
-		AccessToken: newAccess,
-	})
-}
-
-func (s *Server) logout(c *gin.Context) {
-	claims := auth.GetAccessClaims(c)
-	if claims == nil {
-		return
-	}
-
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		utils.Fail(
-			c,
-			&utils.APIError{Code: http.StatusBadRequest, Message: "Missing refresh token cookie"},
-			err,
-		)
-		return
-	}
-
-	db := s.db.Pool()
-	sessionRepo := s.db.Session()
-
-	userAgent := getHeader(c, "User-Agent")
-	if userAgent == "" {
-		return
-	}
-
-	userID, err := strconv.Atoi(claims.Subject)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, int32(userID), userAgent)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	// Check refresh token validity
-	ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.RefreshTokenSecret)
-	if !ok {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	// revoke the session
-	session.Revoked = true
-	err = sessionRepo.Update(c, db, &session)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	setEmptyCookie(c)
-
-	c.Status(http.StatusNoContent)
-}
-
-func (s *Server) logoutFromAllSessions(c *gin.Context) {
-	claims := auth.GetAccessClaims(c)
-	if claims == nil {
-		return
-	}
-
-	userID, err := strconv.Atoi(claims.Subject)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	db := s.db.Pool()
-	sessionRepo := s.db.Session()
-
-	err = sessionRepo.RevokeAllOfUser(c, db, int32(userID))
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	utils.Success(c, "you have logged out from all sessions")
 }

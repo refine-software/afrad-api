@@ -23,6 +23,21 @@ type registerReq struct {
 	Password    string `form:"password"    binding:"required"`
 }
 
+// @Summary      Register User
+// @Description  Registers a new user with optional profile image and sends a verification OTP via email.
+// @Tags         Auth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        firstName    formData  string true  "First Name"
+// @Param        lastName     formData  string true  "Last Name"
+// @Param        email        formData  string true  "Email"
+// @Param        phoneNumber  formData  string false "Phone Number"
+// @Param        password     formData  string true  "Password"
+// @Param        image        formData  file   false "Optional Profile Image"
+// @Success      201  {string}  string  "user created"
+// @Failure      400  {object}  utils.APIError  "Invalid request data"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /register [post]
 func (s *Server) register(ctx *gin.Context) {
 	// get user info
 	var req registerReq
@@ -122,6 +137,17 @@ type verifyAccountReq struct {
 	OTP   string `json:"otp"   binding:"required"`
 }
 
+// @Summary      Verify Account
+// @Description  Verifies a user's account using email and OTP.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body  verifyAccountReq  true  "Verification Data"
+// @Success      200  {string}  string  "your account has been verified"
+// @Failure      400  {object}  utils.APIError  "Bad request or invalid OTP"
+// @Failure      401  {object}  utils.APIError  "OTP expired"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /verify-account [post]
 func (s *Server) verifyAccount(ctx *gin.Context) {
 	var req verifyAccountReq
 	err := ctx.ShouldBindJSON(&req)
@@ -220,6 +246,17 @@ type resendVerificationOTPReq struct {
 	Email string `json:"email" binding:"required"`
 }
 
+// @Summary      Resend Verification OTP
+// @Description  Resends an OTP code to a user's email if the account is not yet verified.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body  resendVerificationOTPReq  true  "Email for which to resend OTP"
+// @Success      200  {string}  string  "check your email for otp"
+// @Failure      400  {object}  utils.APIError  "Bad request, invalid input, or already verified"
+// @Failure      403  {object}  utils.APIError  "OTP request limit reached"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /resend-verification [post]
 func (s *Server) resendVerificationOTP(c *gin.Context) {
 	// get user email
 	var req resendVerificationOTPReq
@@ -327,115 +364,152 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 	utils.Success(c, "check your email for otp")
 }
 
-type loginReq struct {
-	Email    string `json:"email"    binding:"required"`
-	Password string `json:"password" binding:"required"`
+type refreshTokenReq struct {
+	UserID int32 `json:"userId"`
 }
 
-func (s *Server) login(ctx *gin.Context) {
-	var req loginReq
-	err := ctx.ShouldBindJSON(&req)
+type refreshTokenRes struct {
+	AccessToken string `json:"accessToken"`
+}
+
+// @Summary      Refresh Tokens
+// @Description  Rotates a valid refresh token and returns a new access token. Requires refresh token in cookie.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body  refreshTokenReq  true  "User ID"
+// @Success      200  {object}  refreshTokenRes  "New access token"
+// @Failure      400  {object}  utils.APIError  "Bad request or missing refresh_token cookie"
+// @Failure      401  {object}  utils.APIError  "Invalid, expired, or revoked session"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /auth/refresh [post]
+// @Security     RefreshTokenCookie
+func (s *Server) refreshTokens(c *gin.Context) {
+	var req refreshTokenReq
+	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
+		utils.Fail(c, utils.ErrBadRequest, err)
 		return
 	}
 
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
+	// Accept a refresh token and a user agent
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "refresh_token cookie is required",
+			},
+			err,
+		)
+		return
+	}
+
+	userAgent := getHeader(c, "User-Agent")
+	if userAgent == "" {
+		return
+	}
+
 	sessionRepo := s.db.Session()
-	db := s.db.Pool()
-
-	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
+	userRepo := s.db.User()
+	db, err := s.db.BeginTx(c)
 	if err != nil {
-		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
+		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
 
-	user, err := userRepo.Get(ctx, db, req.Email)
+	defer func() {
+		if p := recover(); p != nil {
+			_ = db.Rollback(c)
+			panic(p)
+		}
+	}()
+
+	// Validate the refresh token:
+	// 		- exists in the database
+	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, req.UserID, userAgent)
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			err,
+		)
+		return
+	}
+	// 		- not expired
+	if time.Now().After(session.ExpiresAt) {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			err,
+		)
+		return
+	}
+	// 		- not revoked
+	if session.Revoked {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			err,
+		)
+		return
+	}
+
+	// validate refresh token
+	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.HashSecret); !ok {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
+			errors.New("couldn't verify the refresh token"),
+		)
+		return
+	}
+
+	// get user Role
+	role, err := userRepo.GetRole(c, db, session.UserID)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(ctx, apiErr, err)
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	localAuth, err := localAuthRepo.Get(ctx, db, user.ID)
+	userID := strconv.Itoa(int(session.UserID))
+
+	// Rotate the refresh token
+	newAccess, newRefresh, err := s.generateTokens(userID, string(role))
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	hashedRefresh, err := utils.HashToken(newRefresh, s.env.HashSecret)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	refreshExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+
+	session.RefreshToken = hashedRefresh
+	session.ExpiresAt = refreshExpTime
+	err = sessionRepo.Update(c, db, &session)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(ctx, apiErr, err)
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	// check password
-	if err = utils.VerifyPassword(localAuth.PasswordHash, req.Password); err != nil {
-		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
-		return
-	}
-
-	// check if user is verified
-	if !localAuth.IsAccountVerified {
-		utils.Fail(ctx, &utils.APIError{
-			Code:    http.StatusUnauthorized,
-			Message: "your account isn't verified yet",
-		}, err)
-		return
-	}
-	userIDStr := strconv.Itoa(int(user.ID))
-	newAccessToken, newRefreshToken, err := s.generateTokens(userIDStr, string(user.Role))
+	err = db.Commit(c)
 	if err != nil {
-		utils.Fail(ctx, utils.ErrInternal, err)
+		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
 
-	hashedNewRefreshToken, err := utils.HashToken(newRefreshToken, s.env.HashSecret)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrInternal, err)
-		return
-	}
+	// Return access and refresh tokens
+	s.setRefreshCookie(c, newRefresh)
 
-	// create or update session
-	var session models.Session
-	session, err = sessionRepo.GetByUserIDAndUserAgent(
-		ctx,
-		db,
-		user.ID,
-		ctx.Request.UserAgent(),
-	)
-	if err != nil && !errors.Is(err, database.ErrNotFound) {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(ctx, apiErr, err)
-		return
-	}
-	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if errors.Is(err, database.ErrNotFound) {
-		session = models.Session{
-			UserID:       user.ID,
-			RefreshToken: hashedNewRefreshToken,
-			ExpiresAt:    sessExpTime,
-			UserAgent:    ctx.Request.UserAgent(),
-		}
-
-		err = sessionRepo.Create(ctx, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(ctx, apiErr, err)
-			return
-		}
-	} else {
-		session.Revoked = false
-		session.RefreshToken = hashedNewRefreshToken
-		session.ExpiresAt = sessExpTime
-		err = sessionRepo.Update(ctx, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(ctx, apiErr, err)
-			return
-		}
-	}
-
-	s.setRefreshCookie(ctx, newRefreshToken)
-
-	utils.Success(ctx, loginRes{
-		AccessToken: newAccessToken,
-		User:        *user,
+	utils.Success(c, refreshTokenRes{
+		AccessToken: newAccess,
 	})
 }

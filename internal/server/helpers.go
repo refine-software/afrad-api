@@ -86,18 +86,6 @@ func (s *Server) setRefreshCookie(c *gin.Context, refreshToken string) {
 	s.setCookie(c, "refresh_token", refreshToken)
 }
 
-func setEmptyCookie(c *gin.Context) {
-	c.SetCookie(
-		"",
-		"",
-		0,
-		"/",
-		"",
-		false,
-		true,
-	)
-}
-
 type ImageUpload struct {
 	File   multipart.File
 	Header *multipart.FileHeader

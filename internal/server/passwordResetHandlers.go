@@ -17,6 +17,17 @@ type passwordResetReq struct {
 	Email string `json:"email" binding:"required"`
 }
 
+// @Summary      Request Password Reset OTP
+// @Description  Generates and sends a password reset OTP to the user's email if the account exists and is verified. Limits OTP requests per day.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body  passwordResetReq  true  "User Email"
+// @Success      200  {string}  string  "check your email"
+// @Failure      400  {object}  utils.APIError  "Bad request or user not verified or email not found"
+// @Failure      403  {object}  utils.APIError  "OTP request limit exceeded"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /auth/password-reset [post]
 func (s *Server) passwordReset(ctx *gin.Context) {
 	var req passwordResetReq
 	err := ctx.ShouldBindJSON(&req)
@@ -105,6 +116,17 @@ type PasswordResetConfirmReq struct {
 	Email       string `json:"email"       binding:"required"`
 }
 
+// @Summary      Confirm Password Reset
+// @Description  Confirms password reset by verifying the OTP and updating the user's password.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        payload  body  PasswordResetConfirmReq  true  "New password, OTP, and Email"
+// @Success      200  {string}  string  "password changed"
+// @Failure      400  {object}  utils.APIError  "Bad request, wrong OTP, or missing fields"
+// @Failure      401  {object}  utils.APIError  "OTP expired or unauthorized"
+// @Failure      500  {object}  utils.APIError  "Internal server error"
+// @Router       /auth/password-reset/confirm [post]
 func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 	var req PasswordResetConfirmReq
 	err := ctx.ShouldBindJSON(&req)

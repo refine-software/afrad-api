@@ -15,6 +15,10 @@ func Created(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, data)
 }
 
+func NoContent(c *gin.Context) {
+	c.Status(http.StatusNoContent)
+}
+
 func Fail(c *gin.Context, apiErr *APIError, loggedError error) {
 	log.Printf(
 		"Internal Error: %v | Path: %s | Method: %s\n",
