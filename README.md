@@ -134,4 +134,4 @@ afrad-api/
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This project is licensed under the [MIT License](LICENSE) © 2025 Afrad Team.
+This project is licensed under the [MIT License](LICENSE) © 2025 Refine Team.
