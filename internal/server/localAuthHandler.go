@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -324,4 +325,117 @@ func (s *Server) resendVerificationOTP(c *gin.Context) {
 
 	// responed
 	utils.Success(c, "check your email for otp", nil)
+}
+
+type loginReq struct {
+	Email    string `json:"email"    binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func (s *Server) login(ctx *gin.Context) {
+	var req loginReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		utils.Fail(ctx, utils.ErrBadRequest, err)
+		return
+	}
+
+	userRepo := s.db.User()
+	localAuthRepo := s.db.LocalAuth()
+	sessionRepo := s.db.Session()
+	db := s.db.Pool()
+
+	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
+	if err != nil {
+		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
+		return
+	}
+
+	user, err := userRepo.Get(ctx, db, req.Email)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(ctx, apiErr, err)
+		return
+	}
+
+	localAuth, err := localAuthRepo.Get(ctx, db, user.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(ctx, apiErr, err)
+		return
+	}
+
+	// check password
+	if err = utils.VerifyPassword(localAuth.PasswordHash, req.Password); err != nil {
+		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
+		return
+	}
+
+	// check if user is verified
+	if !localAuth.IsAccountVerified {
+		utils.Fail(ctx, &utils.APIError{
+			Code:    http.StatusUnauthorized,
+			Message: "your account isn't verified yet",
+		}, err)
+		return
+	}
+	userIDStr := strconv.Itoa(int(user.ID))
+	newAccessToken, newRefreshToken, err := s.generateTokens(userIDStr, string(user.Role))
+	if err != nil {
+		utils.Fail(ctx, utils.ErrInternal, err)
+		return
+	}
+
+	hashedNewRefreshToken, err := utils.HashToken(newRefreshToken, s.env.HashSecret)
+	if err != nil {
+		utils.Fail(ctx, utils.ErrInternal, err)
+		return
+	}
+
+	// create or update session
+	var session models.Session
+	session, err = sessionRepo.GetByUserIDAndUserAgent(
+		ctx,
+		db,
+		user.ID,
+		ctx.Request.UserAgent(),
+	)
+	if err != nil && !errors.Is(err, database.ErrNotFound) {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(ctx, apiErr, err)
+		return
+	}
+	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	if errors.Is(err, database.ErrNotFound) {
+		session = models.Session{
+			UserID:       user.ID,
+			RefreshToken: hashedNewRefreshToken,
+			ExpiresAt:    sessExpTime,
+			UserAgent:    ctx.Request.UserAgent(),
+		}
+
+		err = sessionRepo.Create(ctx, db, &session)
+		if err != nil {
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			utils.Fail(ctx, apiErr, err)
+			return
+		}
+	} else {
+		session.Revoked = false
+		session.RefreshToken = hashedNewRefreshToken
+		session.ExpiresAt = sessExpTime
+		err = sessionRepo.Update(ctx, db, &session)
+		if err != nil {
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			utils.Fail(ctx, apiErr, err)
+			return
+		}
+	}
+
+	s.setRefreshCookie(ctx, newRefreshToken)
+
+	utils.Success(ctx, "you've logged in successfully", loginRes{
+		AccessToken: newAccessToken,
+		User:        *user,
+	})
 }
