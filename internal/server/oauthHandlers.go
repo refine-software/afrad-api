@@ -95,7 +95,7 @@ func (s *Server) upsertUser(
 	return u, upsertResult{}
 }
 
-type oauthRes struct {
+type loginRes struct {
 	AccessToken string      `json:"accessToken"`
 	User        models.User `json:"user"`
 }
@@ -183,7 +183,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 
 	s.setRefreshCookie(c, refreshToken)
 
-	utils.Success(c, "You have loged in successfully", oauthRes{
+	utils.Success(c, "You have logged in successfully", loginRes{
 		AccessToken: accessToken,
 		User:        *u,
 	})
