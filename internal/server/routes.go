@@ -8,8 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/refine-software/afrad-api/internal/middleware"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/coder/websocket"
+	swaggerFiles "github.com/swaggo/files"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -49,6 +51,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 		products.GET("/:id")
 		products.GET("/categories")
 	}
+	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 func (s *Server) registerUserRoutes(e *gin.Engine) {

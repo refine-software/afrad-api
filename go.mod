@@ -16,6 +16,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/markbates/goth v1.81.0
 	github.com/spf13/viper v1.20.1
+	github.com/swaggo/files v1.0.1
+	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.4
 	golang.org/x/crypto v0.38.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df

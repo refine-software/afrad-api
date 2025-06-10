@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/refine-software/afrad-api/docs"
 	"github.com/refine-software/afrad-api/internal/server"
 )
 
@@ -37,6 +38,23 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
+// @title           Afrad API
+// @version         1.0
+// @description     Afrad is a RESTful API for a clothing e-commerce platform.
+
+// @contact.name   Ali Jabar
+// @contact.email  ali.jabar@refinesoftware.net
+
+// @license.name  MIT License
+// @license.url   https://img.shields.io/badge/License-MIT-yellow.svg
+
+// @host      127.0.0.1:8080
+// @BasePath  /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer {your_jwt_token}" to authenticate.
 func main() {
 	server := server.NewServer()
 
