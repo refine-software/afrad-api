@@ -96,7 +96,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, "check your email", nil)
+	utils.Success(ctx, "check your email")
 }
 
 type PasswordResetConfirmReq struct {
@@ -165,5 +165,5 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 		return
 	}
 
-	utils.Success(ctx, "password changed", nil)
+	utils.Success(ctx, "password changed")
 }

@@ -183,7 +183,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 
 	s.setRefreshCookie(c, refreshToken)
 
-	utils.Success(c, "You have logged in successfully", loginRes{
+	utils.Success(c, loginRes{
 		AccessToken: accessToken,
 		User:        *u,
 	})
@@ -322,7 +322,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	// Return access and refresh tokens
 	s.setRefreshCookie(c, newRefresh)
 
-	utils.Success(c, "your tokens have been refreshed", refreshTokenRes{
+	utils.Success(c, refreshTokenRes{
 		AccessToken: newAccess,
 	})
 }
@@ -407,5 +407,5 @@ func (s *Server) logoutFromAllSessions(c *gin.Context) {
 		return
 	}
 
-	utils.Success(c, "you have logged out from all sessions", nil)
+	utils.Success(c, "you have logged out from all sessions")
 }
