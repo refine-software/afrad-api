@@ -131,10 +131,13 @@ func (s *Server) googleCallback(c *gin.Context) {
 		return
 	}
 
+	committed := false
 	defer func() {
 		if p := recover(); p != nil {
 			_ = db.Rollback(c)
 			panic(p)
+		} else if !committed {
+			_ = db.Rollback(c)
 		}
 	}()
 
@@ -197,6 +200,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
+	committed = true
 
 	s.setRefreshCookie(c, refreshToken)
 
