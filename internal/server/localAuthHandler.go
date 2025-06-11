@@ -413,18 +413,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 
 	sessionRepo := s.db.Session()
 	userRepo := s.db.User()
-	db, err := s.db.BeginTx(c)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
-		return
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			_ = db.Rollback(c)
-			panic(p)
-		}
-	}()
+	db := s.db.Pool()
 
 	// Validate the refresh token:
 	// 		- exists in the database
@@ -497,12 +486,6 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
 		utils.Fail(c, apiErr, err)
-		return
-	}
-
-	err = db.Commit(c)
-	if err != nil {
-		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
 
