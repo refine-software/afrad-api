@@ -15,6 +15,14 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
+	brand() BrandRepository
+	category() CategoryRepository
+	color() ColorRepository
+	image() ImageRepository
+	product() ProductRepository
+	productVariant() ProductVariantRepository
+	ratingReview() RatingReviewRepository
+	size() SizeRepository
 	PasswordReset() PasswordResetRepository
 	AccountVerificationCode() AccountVerificationCodeRepository
 	LocalAuth() LocalAuthRepository
@@ -34,6 +42,14 @@ type Querier interface {
 }
 
 type service struct {
+	brandRepo                   BrandRepository
+	categoryRepo                CategoryRepository
+	colorRepo                   ColorRepository
+	imageRepo                   ImageRepository
+	productRepo                 ProductRepository
+	productVariantRepo          ProductVariantRepository
+	ratingReviewRepo            RatingReviewRepository
+	sizeRepo                    SizeRepository
 	accountVerificationCodeRepo AccountVerificationCodeRepository
 	passwordResetRepo           PasswordResetRepository
 	sessionRepo                 SessionRepository
@@ -71,6 +87,14 @@ func New(env *config.Env) Service {
 		sessionRepo:                 NewSessionRepository(),
 		passwordResetRepo:           NewPasswordResetRepository(),
 		accountVerificationCodeRepo: NewAccountVerificationCodeRepository(),
+		brandRepo:                   NewBrandRepository(),
+		categoryRepo:                NewCategoryRepository(),
+		colorRepo:                   NewColorRepository(),
+		imageRepo:                   NewImageRepository(),
+		productRepo:                 NewProductRepository(),
+		productVariantRepo:          NewProductVariantRepository(),
+		ratingReviewRepo:            NewRatingReviewRepository(),
+		sizeRepo:                    NewSizeRepository(),
 	}
 
 	return dbInstance
@@ -98,6 +122,38 @@ func (s *service) PasswordReset() PasswordResetRepository {
 
 func (s *service) AccountVerificationCode() AccountVerificationCodeRepository {
 	return s.accountVerificationCodeRepo
+}
+
+func (s *service) brand() BrandRepository {
+	return s.brandRepo
+}
+
+func (s *service) category() CategoryRepository {
+	return s.categoryRepo
+}
+
+func (s *service) color() ColorRepository {
+	return s.colorRepo
+}
+
+func (s *service) image() ImageRepository {
+	return s.imageRepo
+}
+
+func (s *service) product() ProductRepository {
+	return s.productRepo
+}
+
+func (s *service) productVariant() ProductVariantRepository {
+	return s.productRepo
+}
+
+func (s *service) ratingReview() RatingReviewRepository {
+	return s.ratingReviewRepo
+}
+
+func (s *service) size() SizeRepository {
+	return s.sizeRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
