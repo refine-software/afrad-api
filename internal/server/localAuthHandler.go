@@ -167,14 +167,14 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	// check if email exists in the database
 	dbErr := userRepo.CheckEmailExistence(ctx, db, req.Email)
-	if dbErr.Message == database.ErrNotFound {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		utils.Fail(
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusBadRequest,
 				Message: "email not found",
 			},
-			err,
+			dbErr,
 		)
 		return
 	}
@@ -214,7 +214,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusUnauthorized,
-				Message: "OTP is expired, try resend another one",
+				Message: "OTP is expired, try resending a new one",
 			},
 			nil,
 		)

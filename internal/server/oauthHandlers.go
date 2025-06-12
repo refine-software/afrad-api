@@ -168,7 +168,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		return
 	}
 	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if dbErr.Message == database.ErrNotFound {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		session = models.Session{
 			UserID:       u.ID,
 			RefreshToken: hashedRefresh,

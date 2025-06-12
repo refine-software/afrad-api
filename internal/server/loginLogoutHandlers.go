@@ -71,7 +71,7 @@ func (s *Server) login(ctx *gin.Context) {
 		utils.Fail(ctx, &utils.APIError{
 			Code:    http.StatusUnauthorized,
 			Message: "your account isn't verified yet",
-		}, err)
+		}, nil)
 		return
 	}
 	userIDStr := strconv.Itoa(int(user.ID))
@@ -101,7 +101,7 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if dbErr.Message == database.ErrNotFound {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		session = models.Session{
 			UserID:       user.ID,
 			RefreshToken: hashedNewRefreshToken,

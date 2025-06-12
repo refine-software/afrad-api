@@ -41,7 +41,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 
 	// check if the  exists
 	dbErr := userRepo.CheckEmailExistence(ctx, db, req.Email)
-	if dbErr.Message == database.ErrNotFound {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
 		return
 	}
