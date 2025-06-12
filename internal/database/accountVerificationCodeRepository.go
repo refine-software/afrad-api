@@ -8,26 +8,26 @@ import (
 type AccountVerificationCodeRepository interface {
 	// Create phone verification code,
 	// columns reqired: otp_code, user_id, expires_at
-	Create(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
+	Create(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) *DBError
 
 	// Update phone verification code,
 	// columns reqired: is_used,
 	// by user_id.
-	Update(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
+	Update(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) *DBError
 
 	// Get phone verification code,
 	// by user_id.
-	Get(ctx *gin.Context, db Querier, userID int32) (*models.AccountVerificationCode, error)
+	Get(ctx *gin.Context, db Querier, userID int32) (*models.AccountVerificationCode, *DBError)
 
 	// count how many otp codes does the user have
-	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, error)
+	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, *DBError)
 
 	// count the number of otp codes a user have in a day
 	CountUserOTPCodesPerDay(
 		ctx *gin.Context,
 		db Querier,
 		userID int32,
-	) (int, error)
+	) (int, *DBError)
 }
 
 type accountVerificationCodeRepo struct{}
@@ -40,14 +40,14 @@ func (r *accountVerificationCodeRepo) Create(
 	ctx *gin.Context,
 	db Querier,
 	p *models.AccountVerificationCode,
-) error {
+) *DBError {
 	query := `
 		INSERT INTO account_verification_codes(otp_code, user_id, expires_at)
 		VALUES ($1, $2, $3);
 	`
 	_, err := db.Exec(ctx, query, p.OtpCode, p.UserID, p.ExpiresAt)
 	if err != nil {
-		return Parse(err)
+		return Parse(err, "Account Verification Code", "Create")
 	}
 
 	return nil
@@ -57,7 +57,7 @@ func (r *accountVerificationCodeRepo) Update(
 	ctx *gin.Context,
 	db Querier,
 	p *models.AccountVerificationCode,
-) error {
+) *DBError {
 	query := `
 		UPDATE account_verification_codes
 		SET is_used = $2 
@@ -68,7 +68,7 @@ func (r *accountVerificationCodeRepo) Update(
 	`
 	_, err := db.Exec(ctx, query, p.UserID, p.IsUsed)
 	if err != nil {
-		return Parse(err)
+		return Parse(err, "Account Verification Code", "Update")
 	}
 	return nil
 }
@@ -77,7 +77,7 @@ func (r *accountVerificationCodeRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (*models.AccountVerificationCode, error) {
+) (*models.AccountVerificationCode, *DBError) {
 	query := `
 		SELECT id, otp_code, is_used, expires_at, created_at
 		FROM account_verification_codes
@@ -90,7 +90,7 @@ func (r *accountVerificationCodeRepo) Get(
 	err := db.QueryRow(ctx, query, userID).
 		Scan(&a.ID, &a.OtpCode, &a.IsUsed, &a.ExpiresAt, &a.CreatedAt)
 	if err != nil {
-		return nil, Parse(err)
+		return nil, Parse(err, "Account Verification Code", "Get")
 	}
 
 	return &a, nil
@@ -100,7 +100,7 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 	ctx *gin.Context,
 	db Querier,
 	userID int,
-) (int, error) {
+) (int, *DBError) {
 	query := `
 		SELECT COUNT(*)
 		FROM account_verification_codes
@@ -109,7 +109,7 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 	var userOtps int
 	err := db.QueryRow(ctx, query, userID).Scan(&userOtps)
 	if err != nil {
-		return 0, Parse(err)
+		return 0, Parse(err, "Account Verification Code", "CountUserOtpCodes")
 	}
 	return userOtps, nil
 }
@@ -118,7 +118,7 @@ func (r *accountVerificationCodeRepo) CountUserOTPCodesPerDay(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (int, error) {
+) (int, *DBError) {
 	query := `
 	SELECT COUNT(*)
 	FROM account_verification_codes
@@ -129,7 +129,7 @@ func (r *accountVerificationCodeRepo) CountUserOTPCodesPerDay(
 	var count int
 	err := db.QueryRow(ctx, query, userID).Scan(&count)
 	if err != nil {
-		return 0, Parse(err)
+		return 0, Parse(err, "Account Verification Code", "CountUserOTPCodesPerDay")
 	}
 
 	return count, nil
