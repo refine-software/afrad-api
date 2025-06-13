@@ -49,7 +49,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		products.GET("")
 		products.GET("/:id")
-		products.GET("/categories")
+		products.GET("/categories", s.getCategories)
 	}
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -107,7 +107,7 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 
 	category := admin.Group("/category")
 	{
-		category.POST("")
+		category.POST("", s.createCategory)
 		category.PATCH("/:id")
 		category.DELETE("/:id")
 	}
