@@ -74,8 +74,8 @@ var (
 	ErrRoleNotAllowed = NewAPIError(http.StatusForbidden, "role not allowed")
 )
 
-func MapDBErrorToAPIError(err error, columnName string) *APIError {
-	switch err {
+func MapDBErrorToAPIError(err *database.DBError, columnName string) *APIError {
+	switch err.Message {
 	case database.ErrDuplicate:
 		return ErrUniqueViolation(columnName)
 	case database.ErrNotFound:

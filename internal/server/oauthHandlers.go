@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -45,11 +44,11 @@ func (s *Server) upsertUser(
 	userRepo := s.db.User()
 	oauthRepo := s.db.Oauth()
 
-	u, err := userRepo.Get(c, db, user.Email)
-	if err != nil && !errors.Is(err, database.ErrNotFound) {
+	u, dbErr := userRepo.Get(c, db, user.Email)
+	if dbErr != nil && dbErr.Message != database.ErrNotFound {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(err, "user"),
-			Err:      err,
+			APIError: utils.MapDBErrorToAPIError(dbErr, "user"),
+			Err:      dbErr,
 		}
 	}
 
@@ -60,11 +59,11 @@ func (s *Server) upsertUser(
 		u.Image = pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""}
 		u.Role = role
 
-		err = userRepo.Update(c, db, u)
-		if err != nil {
+		dbErr = userRepo.Update(c, db, u)
+		if dbErr != nil {
 			return nil, upsertResult{
-				APIError: utils.MapDBErrorToAPIError(err, "user"),
-				Err:      err,
+				APIError: utils.MapDBErrorToAPIError(dbErr, "user"),
+				Err:      dbErr,
 			}
 		}
 		return u, upsertResult{}
@@ -79,21 +78,21 @@ func (s *Server) upsertUser(
 		PhoneNumber: pgtype.Text{},
 		Role:        role,
 	}
-	userID, err := userRepo.Create(c, db, u)
-	if err != nil {
-		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(err, "user"), Err: err}
+	userID, dbErr := userRepo.Create(c, db, u)
+	if dbErr != nil {
+		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(dbErr, "user"), Err: dbErr}
 	}
 	u.ID = int32(userID)
 
-	err = oauthRepo.Create(c, db, &models.OAuth{
+	dbErr = oauthRepo.Create(c, db, &models.OAuth{
 		UserID:     u.ID,
 		Provider:   user.Provider,
 		ProviderID: user.UserID,
 	})
-	if err != nil {
+	if dbErr != nil {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(err, "oauth"),
-			Err:      err,
+			APIError: utils.MapDBErrorToAPIError(dbErr, "oauth"),
+			Err:      dbErr,
 		}
 	}
 
@@ -131,10 +130,13 @@ func (s *Server) googleCallback(c *gin.Context) {
 		return
 	}
 
+	committed := false
 	defer func() {
 		if p := recover(); p != nil {
 			_ = db.Rollback(c)
 			panic(p)
+		} else if !committed {
+			_ = db.Rollback(c)
 		}
 	}()
 
@@ -159,14 +161,14 @@ func (s *Server) googleCallback(c *gin.Context) {
 	}
 
 	var session models.Session
-	session, err = sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
-	if err != nil && !errors.Is(err, database.ErrNotFound) {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
+	session, dbErr := sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
+	if dbErr != nil && dbErr.Message != database.ErrNotFound {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+		utils.Fail(c, apiErr, dbErr)
 		return
 	}
 	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if errors.Is(err, database.ErrNotFound) {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		session = models.Session{
 			UserID:       u.ID,
 			RefreshToken: hashedRefresh,
@@ -174,20 +176,20 @@ func (s *Server) googleCallback(c *gin.Context) {
 			UserAgent:    c.Request.UserAgent(),
 		}
 
-		err = sessionRepo.Create(c, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(c, apiErr, err)
+		dbErr = sessionRepo.Create(c, db, &session)
+		if dbErr != nil {
+			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+			utils.Fail(c, apiErr, dbErr)
 			return
 		}
 	} else {
 		session.Revoked = false
 		session.RefreshToken = hashedRefresh
 		session.ExpiresAt = sessExpTime
-		err = sessionRepo.Update(c, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(c, apiErr, err)
+		dbErr = sessionRepo.Update(c, db, &session)
+		if dbErr != nil {
+			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+			utils.Fail(c, apiErr, dbErr)
 			return
 		}
 	}
@@ -197,6 +199,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
+	committed = true
 
 	s.setRefreshCookie(c, refreshToken)
 

@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,26 +40,25 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	db := s.db.Pool()
 
 	// check if the  exists
-	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
-	if errors.Is(err, database.ErrNotFound) {
+	dbErr := userRepo.CheckEmailExistence(ctx, db, req.Email)
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
 		return
 	}
 
 	// get the user_id by requested email
-	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user_id")
-		utils.Fail(ctx, apiErr, err)
+	userID, dbErr := userRepo.GetIDByEmail(ctx, db, req.Email)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "user_id")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
 	// check if user is verified
-	Verified, err := localAuthRepo.CheckUserVerification(ctx, db, int32(userID))
-	fmt.Println(Verified)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "is_verified")
-		utils.Fail(ctx, apiErr, err)
+	Verified, dbErr := localAuthRepo.CheckUserVerification(ctx, db, int32(userID))
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "is_verified")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
@@ -74,13 +72,12 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	}
 
 	// count the password reset otp codes
-	countOTPs, err := passwordRestRepo.CountOTPCodesPerDay(ctx, db, int32(userID))
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password_reset")
-		utils.Fail(ctx, apiErr, err)
+	countOTPs, dbErr := passwordRestRepo.CountOTPCodesPerDay(ctx, db, int32(userID))
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "password_reset")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
-	fmt.Println(countOTPs)
 	if countOTPs > s.env.MaxOTPRequestsPerDay {
 		utils.Fail(ctx, utils.ErrForbidden, errors.New("max otp attempts per day"))
 		return
@@ -89,14 +86,14 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	// generate OTP and store it in the database
 	otp := utils.GenerateRandomOTP()
 
-	err = passwordRestRepo.Create(ctx, db, &models.PasswordReset{
+	dbErr = passwordRestRepo.Create(ctx, db, &models.PasswordReset{
 		OtpCode:   otp,
 		ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
 		UserID:    int32(userID),
 	})
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password_reset")
-		utils.Fail(ctx, apiErr, err)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "password_reset")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
@@ -141,14 +138,21 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 	db := s.db.Pool()
 
 	// get the user_id by email
-	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrInternal, err)
+	userID, dbErr := userRepo.GetIDByEmail(ctx, db, req.Email)
+	if dbErr != nil {
+		utils.MapDBErrorToAPIError(dbErr, "user")
+		utils.Fail(ctx, utils.ErrInternal, dbErr)
+		return
+	}
+
+	passwordReset, dbErr := passwordRestRepo.Get(ctx, db, int32(userID))
+	if dbErr != nil {
+		utils.MapDBErrorToAPIError(dbErr, "user")
+		utils.Fail(ctx, utils.ErrInternal, dbErr)
 		return
 	}
 
 	// check if requested otp is the same as what we have in the database
-	passwordReset, err := passwordRestRepo.Get(ctx, db, int32(userID))
 	if passwordReset.OtpCode != req.OTP {
 		utils.Fail(ctx, utils.ErrBadRequest, errors.New("wrong OTP"))
 		return
@@ -159,6 +163,7 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 		utils.Fail(ctx, utils.ErrUnauthorized, errors.New("OTP is expired"))
 		return
 	}
+
 	passwordHash, err := utils.HashPassword(req.NewPassword)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrInternal, err)
@@ -166,24 +171,29 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 	}
 
 	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		err = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
+		dbErr = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
 			UserID:            int32(userID),
 			IsAccountVerified: true,
 			PasswordHash:      passwordHash,
 		})
-		if err != nil {
-			return err
+		if dbErr != nil {
+			return dbErr
 		}
 
-		err = passwordRestRepo.Update(ctx, tx, int32(userID))
+		dbErr = passwordRestRepo.Update(ctx, tx, int32(userID))
 		if err != nil {
-			return err
+			return dbErr
 		}
 		return nil
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password")
-		utils.Fail(ctx, apiErr, err)
+		var dbErr *database.DBError
+		if errors.As(err, &dbErr) {
+			apiErr := utils.MapDBErrorToAPIError(dbErr, "password")
+			utils.Fail(ctx, apiErr, dbErr)
+		} else {
+			utils.Fail(ctx, utils.ErrInternal, err)
+		}
 		return
 	}
 

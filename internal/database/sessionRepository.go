@@ -12,26 +12,26 @@ type SessionRepository interface {
 		db Querier,
 		userID int32,
 		userAgent string,
-	) (models.Session, error)
+	) (models.Session, *DBError)
 
 	// Fetch all sessions of a certain user
 	GetAllOfUser(
 		ctx *gin.Context,
 		db Querier,
 		userID int32,
-	) ([]models.Session, error)
+	) ([]models.Session, *DBError)
 
 	// This method will create a session, the following columns are required:
 	// user_id, user_agent, refresh_token, expires_at.
-	Create(ctx *gin.Context, db Querier, sess *models.Session) error
+	Create(ctx *gin.Context, db Querier, sess *models.Session) *DBError
 
 	// Update the user session with the following columns:
 	// revoked, refresh_token, expires_at.
 	// the session will be updated using its id.
-	Update(ctx *gin.Context, db Querier, sess *models.Session) error
+	Update(ctx *gin.Context, db Querier, sess *models.Session) *DBError
 
 	// This method will revoke all sessions of a certain user
-	RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error
+	RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) *DBError
 }
 
 type sessionRepo struct{}
@@ -45,7 +45,7 @@ func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
 	db Querier,
 	userID int32,
 	userAgent string,
-) (models.Session, error) {
+) (models.Session, *DBError) {
 	query := `
 	SELECT id, revoked, user_agent, refresh_token, expires_at, created_at, updated_at, user_id 
 	FROM sessions 
@@ -64,14 +64,14 @@ func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
 		&s.UserID,
 	)
 
-	return s, Parse(err)
+	return s, Parse(err, "Session", "GetByUserIDAndUserAgent")
 }
 
 func (s *sessionRepo) GetAllOfUser(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) ([]models.Session, error) {
+) ([]models.Session, *DBError) {
 	query := `
 	SELECT id, revoked, user_agent, refresh_token, expires_at, created_at, updated_at, user_id
 	FROM sessions
@@ -80,7 +80,7 @@ func (s *sessionRepo) GetAllOfUser(
 
 	rows, err := db.Query(ctx, query, userID)
 	if err != nil {
-		return nil, Parse(err)
+		return nil, Parse(err, "Session", "GetAllOfUser")
 	}
 	defer rows.Close()
 
@@ -88,28 +88,28 @@ func (s *sessionRepo) GetAllOfUser(
 	for rows.Next() {
 		var s models.Session
 		if err = rows.Scan(&s.ID, &s.Revoked, &s.UserAgent, &s.RefreshToken, &s.ExpiresAt, &s.CreatedAt, &s.UpdatedAt, &s.UserID); err != nil {
-			return nil, err
+			return nil, Parse(err, "Session", "GetAllOfUser")
 		}
 		sessions = append(sessions, s)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, Parse(err)
+		return nil, Parse(err, "Session", "GetAllOfUser")
 	}
 
 	return sessions, nil
 }
 
-func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) error {
+func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) *DBError {
 	query := `
 	INSERT INTO sessions(user_id, user_agent, refresh_token, expires_at)
 	VALUES ($1, $2, $3, $4)
 	`
 
 	_, err := db.Exec(ctx, query, sess.UserID, sess.UserAgent, sess.RefreshToken, sess.ExpiresAt)
-	return Parse(err)
+	return Parse(err, "Session", "Create")
 }
 
-func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) error {
+func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) *DBError {
 	query := `
 	UPDATE sessions
 	SET revoked = $2, refresh_token = $3, expires_at = $4
@@ -117,10 +117,10 @@ func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session)
 	`
 
 	_, err := db.Exec(ctx, query, sess.ID, sess.Revoked, sess.RefreshToken, sess.ExpiresAt)
-	return Parse(err)
+	return Parse(err, "Session", "Update")
 }
 
-func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error {
+func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) *DBError {
 	query := `
 		UPDATE sessions
 		SET revoked = true
@@ -129,7 +129,7 @@ func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32
 
 	_, err := db.Exec(ctx, query, userID)
 	if err != nil {
-		return Parse(err)
+		return Parse(err, "Session", "RevokeAllOfUser")
 	}
 
 	return nil

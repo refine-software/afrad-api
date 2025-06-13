@@ -7,16 +7,36 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+type DBError struct {
+	Message string
+	Repo    string
+	Method  string
+	Code    string
+}
+
+func NewDBError(message, repo, method, code string) *DBError {
+	return &DBError{
+		Message: message,
+		Repo:    repo,
+		Method:  method,
+		Code:    code,
+	}
+}
+
+func (e *DBError) Error() string {
+	return e.Message
+}
+
 var (
-	ErrDuplicate      = errors.New("duplicate record")
-	ErrForeignKey     = errors.New("related record not found")
-	ErrNotFound       = errors.New("record not found")
-	ErrInvalidInput   = errors.New("invalid input")
-	ErrStringTooLong  = errors.New("input string is too long")
-	ErrInvalidFormat  = errors.New("invalid input format")
-	ErrNullViolation  = errors.New("missing required field")
-	ErrCheckViolation = errors.New("invalid value for one of the fields")
-	ErrUnknown        = errors.New("unknown database error")
+	ErrDuplicate      = "duplicate record"
+	ErrForeignKey     = "related record not found"
+	ErrNotFound       = "record not found"
+	ErrInvalidInput   = "invalid input"
+	ErrStringTooLong  = "input string is too long"
+	ErrInvalidFormat  = "invalid input format"
+	ErrNullViolation  = "missing required field"
+	ErrCheckViolation = "invalid value for one of the fields"
+	ErrUnknown        = "unknown database error"
 )
 
 var (
@@ -28,34 +48,34 @@ var (
 	checkViolationCode            = "23514"
 )
 
-func Parse(err error) error {
+func Parse(err error, repo, method string) *DBError {
 	if err == nil {
 		return nil
 	}
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return ErrNotFound
+		return NewDBError(ErrNotFound, repo, method, "")
 	}
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case uniqueViolationCode:
-			return ErrDuplicate
+			return NewDBError(ErrDuplicate, repo, method, uniqueViolationCode)
 		case foreignKeyViolationCode:
-			return ErrForeignKey
+			return NewDBError(ErrForeignKey, repo, method, foreignKeyViolationCode)
 		case notNullViolationCode:
-			return ErrNullViolation
+			return NewDBError(ErrNullViolation, repo, method, notNullViolationCode)
 		case checkViolationCode:
-			return ErrCheckViolation
+			return NewDBError(ErrCheckViolation, repo, method, checkViolationCode)
 		case stringDataRightTruncationCode:
-			return ErrStringTooLong
+			return NewDBError(ErrStringTooLong, repo, method, stringDataRightTruncationCode)
 		case invalidTextRepresentationCode:
-			return ErrInvalidFormat
+			return NewDBError(ErrInvalidFormat, repo, method, invalidTextRepresentationCode)
 		default:
-			return ErrUnknown
+			return NewDBError(ErrUnknown, repo, method, "")
 		}
 	}
 
-	return err
+	return NewDBError(ErrUnknown, repo, method, "")
 }

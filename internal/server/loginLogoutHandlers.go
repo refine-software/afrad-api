@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -41,23 +40,23 @@ func (s *Server) login(ctx *gin.Context) {
 	sessionRepo := s.db.Session()
 	db := s.db.Pool()
 
-	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
+	dbErr := userRepo.CheckEmailExistence(ctx, db, req.Email)
+	if dbErr != nil {
+		utils.Fail(ctx, utils.ErrInvalidCredentials, dbErr)
 		return
 	}
 
-	user, err := userRepo.Get(ctx, db, req.Email)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(ctx, apiErr, err)
+	user, dbErr := userRepo.Get(ctx, db, req.Email)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
-	localAuth, err := localAuthRepo.Get(ctx, db, user.ID)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
-		utils.Fail(ctx, apiErr, err)
+	localAuth, dbErr := localAuthRepo.Get(ctx, db, user.ID)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
@@ -72,7 +71,7 @@ func (s *Server) login(ctx *gin.Context) {
 		utils.Fail(ctx, &utils.APIError{
 			Code:    http.StatusUnauthorized,
 			Message: "your account isn't verified yet",
-		}, err)
+		}, nil)
 		return
 	}
 	userIDStr := strconv.Itoa(int(user.ID))
@@ -90,19 +89,19 @@ func (s *Server) login(ctx *gin.Context) {
 
 	// create or update session
 	var session models.Session
-	session, err = sessionRepo.GetByUserIDAndUserAgent(
+	session, dbErr = sessionRepo.GetByUserIDAndUserAgent(
 		ctx,
 		db,
 		user.ID,
 		ctx.Request.UserAgent(),
 	)
-	if err != nil && !errors.Is(err, database.ErrNotFound) {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(ctx, apiErr, err)
+	if dbErr != nil && dbErr.Message != database.ErrNotFound {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if errors.Is(err, database.ErrNotFound) {
+	if dbErr != nil && dbErr.Message == database.ErrNotFound {
 		session = models.Session{
 			UserID:       user.ID,
 			RefreshToken: hashedNewRefreshToken,
@@ -110,20 +109,20 @@ func (s *Server) login(ctx *gin.Context) {
 			UserAgent:    ctx.Request.UserAgent(),
 		}
 
-		err = sessionRepo.Create(ctx, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(ctx, apiErr, err)
+		dbErr = sessionRepo.Create(ctx, db, &session)
+		if dbErr != nil {
+			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+			utils.Fail(ctx, apiErr, dbErr)
 			return
 		}
 	} else {
 		session.Revoked = false
 		session.RefreshToken = hashedNewRefreshToken
 		session.ExpiresAt = sessExpTime
-		err = sessionRepo.Update(ctx, db, &session)
-		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
-			utils.Fail(ctx, apiErr, err)
+		dbErr = sessionRepo.Update(ctx, db, &session)
+		if dbErr != nil {
+			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+			utils.Fail(ctx, apiErr, dbErr)
 			return
 		}
 	}
@@ -176,10 +175,10 @@ func (s *Server) logout(c *gin.Context) {
 		return
 	}
 
-	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, int32(userID), userAgent)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
+	session, dbErr := sessionRepo.GetByUserIDAndUserAgent(c, db, int32(userID), userAgent)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+		utils.Fail(c, apiErr, dbErr)
 		return
 	}
 
@@ -192,10 +191,10 @@ func (s *Server) logout(c *gin.Context) {
 
 	// revoke the session
 	session.Revoked = true
-	err = sessionRepo.Update(c, db, &session)
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
+	dbErr = sessionRepo.Update(c, db, &session)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+		utils.Fail(c, apiErr, dbErr)
 		return
 	}
 
@@ -226,10 +225,10 @@ func (s *Server) logoutFromAllSessions(c *gin.Context) {
 	db := s.db.Pool()
 	sessionRepo := s.db.Session()
 
-	err = sessionRepo.RevokeAllOfUser(c, db, int32(userID))
-	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
-		utils.Fail(c, apiErr, err)
+	dbErr := sessionRepo.RevokeAllOfUser(c, db, int32(userID))
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
+		utils.Fail(c, apiErr, dbErr)
 		return
 	}
 

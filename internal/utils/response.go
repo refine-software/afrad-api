@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/refine-software/afrad-api/internal/database"
 )
 
 func Success(c *gin.Context, data any) {
@@ -20,12 +22,23 @@ func NoContent(c *gin.Context) {
 }
 
 func Fail(c *gin.Context, apiErr *APIError, loggedError error) {
-	log.Printf(
-		"Internal Error: %v | Path: %s | Method: %s\n",
-		loggedError,
-		c.Request.URL.Path,
-		c.Request.Method,
-	)
+	var dbErr *database.DBError
+	if errors.As(loggedError, &dbErr) {
+		log.Printf(
+			"Database Error: %s | Repository: %s | Method: %s | Code: %s",
+			dbErr.Message,
+			dbErr.Repo,
+			dbErr.Method,
+			dbErr.Code,
+		)
+	} else {
+		log.Printf(
+			"Internal Error: %v | Path: %s | Method: %s\n",
+			loggedError,
+			c.Request.URL.Path,
+			c.Request.Method,
+		)
+	}
 
 	c.JSON(apiErr.Code, apiErr)
 }
