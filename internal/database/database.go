@@ -15,14 +15,14 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
-	brand() BrandRepository
-	category() CategoryRepository
-	color() ColorRepository
-	image() ImageRepository
-	product() ProductRepository
-	productVariant() ProductVariantRepository
-	ratingReview() RatingReviewRepository
-	size() SizeRepository
+	Brand() BrandRepository
+	Category() CategoryRepository
+	Color() ColorRepository
+	Image() ImageRepository
+	Product() ProductRepository
+	ProductVariant() ProductVariantRepository
+	RatingReview() RatingReviewRepository
+	Size() SizeRepository
 	PasswordReset() PasswordResetRepository
 	AccountVerificationCode() AccountVerificationCodeRepository
 	LocalAuth() LocalAuthRepository
@@ -124,35 +124,35 @@ func (s *service) AccountVerificationCode() AccountVerificationCodeRepository {
 	return s.accountVerificationCodeRepo
 }
 
-func (s *service) brand() BrandRepository {
+func (s *service) Brand() BrandRepository {
 	return s.brandRepo
 }
 
-func (s *service) category() CategoryRepository {
+func (s *service) Category() CategoryRepository {
 	return s.categoryRepo
 }
 
-func (s *service) color() ColorRepository {
+func (s *service) Color() ColorRepository {
 	return s.colorRepo
 }
 
-func (s *service) image() ImageRepository {
+func (s *service) Image() ImageRepository {
 	return s.imageRepo
 }
 
-func (s *service) product() ProductRepository {
+func (s *service) Product() ProductRepository {
 	return s.productRepo
 }
 
-func (s *service) productVariant() ProductVariantRepository {
+func (s *service) ProductVariant() ProductVariantRepository {
 	return s.productRepo
 }
 
-func (s *service) ratingReview() RatingReviewRepository {
+func (s *service) RatingReview() RatingReviewRepository {
 	return s.ratingReviewRepo
 }
 
-func (s *service) size() SizeRepository {
+func (s *service) Size() SizeRepository {
 	return s.sizeRepo
 }
 

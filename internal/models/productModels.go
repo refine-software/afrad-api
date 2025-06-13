@@ -30,7 +30,7 @@ type ProductVariant struct {
 type Category struct {
 	ID       int32
 	Name     string
-	ParentID int32
+	ParentID pgtype.Int4
 }
 
 type RatingReview struct {
