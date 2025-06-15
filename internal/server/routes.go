@@ -108,8 +108,8 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 	category := admin.Group("/category")
 	{
 		category.POST("", s.createCategory)
-		category.PATCH("/:id")
-		category.DELETE("/:id")
+		category.PATCH("/:id", s.updateCategory)
+		category.DELETE("/:id", s.deleteCategory)
 	}
 
 	discount := admin.Group("/discounts")
