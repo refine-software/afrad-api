@@ -10,6 +10,7 @@ type Product struct {
 	ID              int32
 	Name            string
 	Details         pgtype.Text
+	Thumbnail       string
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	BrandID         int32
