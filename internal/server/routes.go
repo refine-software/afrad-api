@@ -47,7 +47,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 
 	products := e.Group("/products")
 	{
-		products.GET("")
+		products.GET("", s.getAllProducts)
 		products.GET("/:id")
 		products.GET("/categories", s.getCategories)
 	}

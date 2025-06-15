@@ -1,9 +1,94 @@
 package database
 
-type ProductRepository interface{}
+import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+	"github.com/refine-software/afrad-api/internal/utils/filters"
+)
+
+type ProductRepository interface {
+	GetAll(
+		ctx *gin.Context,
+		db Querier,
+		filters filters.Filters,
+		prodFilter *filters.ProductFilterOptions,
+	) ([]Product, filters.Metadata, *DBError)
+}
 
 type productRepo struct{}
 
 func NewProductRepository() ProductRepository {
 	return &productRepo{}
+}
+
+type Product struct {
+	ID        int32   `json:"id"`
+	Name      string  `json:"name"`
+	Thumbnail string  `json:"thumbnail"`
+	Brand     string  `json:"brand"`
+	Category  string  `json:"category"`
+	Price     int     `json:"price"`
+	Rating    float32 `json:"rating"`
+}
+
+func (p *productRepo) GetAll(
+	ctx *gin.Context,
+	db Querier,
+	f filters.Filters,
+	productFilters *filters.ProductFilterOptions,
+) ([]Product, filters.Metadata, *DBError) {
+	whereClause, args := productFilters.GetWhereClause()
+	query := fmt.Sprintf(`
+	SELECT 
+  	COUNT(*) OVER() AS total_records,
+  	products.id, 
+  	products.name, 
+  	products.thumbnail, 
+  	brands.brand,
+  	categories.name AS category, 
+  	MIN(product_variants.price) AS min_price,
+  	COALESCE(ROUND(AVG(DISTINCT rating_review.rating)::numeric, 2), 0.00) AS avg_rating
+	FROM products
+	JOIN categories ON categories.id = products.product_category
+	JOIN brands ON brands.id = products.brand_id
+	JOIN product_variants ON product_variants.product_id = products.id
+	LEFT JOIN rating_review ON rating_review.product_id = products.id
+	%s
+	GROUP BY 
+  	products.id,
+  	products.name,
+  	products.thumbnail,
+  	brands.brand,
+  	categories.name
+	ORDER BY %s %s, products.id ASC
+	LIMIT $1 OFFSET $2
+	`, whereClause, f.SortColumn(), f.SortDirection())
+
+	fullArgs := []any{f.Limit(), f.Offset()}
+	fullArgs = append(fullArgs, args...)
+	rows, err := db.Query(ctx, query, fullArgs...)
+	if err != nil {
+		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+	}
+	defer rows.Close()
+
+	var (
+		totalRecords int
+		products     []Product
+	)
+	for rows.Next() {
+		var p Product
+		if err = rows.Scan(&totalRecords, &p.ID, &p.Name, &p.Thumbnail, &p.Brand, &p.Category, &p.Price, &p.Rating); err != nil {
+			return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+		}
+		products = append(products, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+	}
+
+	metadata := filters.CalculateMetadata(totalRecords, f.Page, f.PageSize)
+
+	return products, metadata, nil
 }
