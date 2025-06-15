@@ -53,10 +53,10 @@
 
 | DONE | Method   | Endpoint               | Description                     |
 | ---- | -------- | ---------------------- | ------------------------------- |
-| ❌   | `GET`    | `/products/categories` | Fetch all categories            |
-| ❌   | `POST`   | `/admin/category`      | Add a new category (admin only) |
-| ❌   | `PATCH`  | `/admin/category/:id`  | Update category (admin only)    |
-| ❌   | `DELETE` | `/admin/category/:id`  | Delete category (admin only)    |
+| ✅   | `GET`    | `/products/categories` | Fetch all categories            |
+| ✅   | `POST`   | `/admin/category`      | Add a new category (admin only) |
+| ✅   | `PATCH`  | `/admin/category/:id`  | Update category (admin only)    |
+| ✅   | `DELETE` | `/admin/category/:id`  | Delete category (admin only)    |
 
 ## Cart
 
