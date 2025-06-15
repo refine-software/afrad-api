@@ -41,7 +41,7 @@ func (s *Server) createCategory(ctx *gin.Context) {
 	utils.Created(ctx, "category created")
 }
 
-type getCategoryRes struct {
+type getCategoriesRes struct {
 	Categories []models.Category `json:"categories"`
 }
 
@@ -49,14 +49,14 @@ func (s *Server) getCategories(ctx *gin.Context) {
 	categoryRepo := s.db.Category()
 	db := s.db.Pool()
 
-	categories, dbErr := categoryRepo.Get(ctx, db)
+	categories, dbErr := categoryRepo.GetAll(ctx, db)
 	if dbErr != nil {
 		apiErr := utils.MapDBErrorToAPIError(dbErr, "categories")
 		utils.Fail(ctx, apiErr, dbErr)
 		return
 	}
 
-	utils.Success(ctx, getCategoryRes{
+	utils.Success(ctx, getCategoriesRes{
 		Categories: *categories,
 	})
 }

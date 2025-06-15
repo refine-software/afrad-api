@@ -7,7 +7,7 @@ import (
 
 type CategoryRepository interface {
 	Create(ctx *gin.Context, db Querier, category *models.Category) (int32, *DBError)
-	Get(ctx *gin.Context, db Querier) (*[]models.Category, *DBError)
+	GetAll(ctx *gin.Context, db Querier) (*[]models.Category, *DBError)
 }
 
 type categoryRepo struct{}
@@ -36,7 +36,7 @@ func (r *categoryRepo) Create(
 	return id, nil
 }
 
-func (r *categoryRepo) Get(ctx *gin.Context, db Querier) (*[]models.Category, *DBError) {
+func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category, *DBError) {
 	query := `
 		SELECT id, name, parent_id
 		FROM categories
