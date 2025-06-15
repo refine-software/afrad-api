@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -128,4 +129,46 @@ func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
 		File:   file,
 		Header: header,
 	}, nil
+}
+
+func convStrToInt(c *gin.Context, numAsStr string, fieldName string) int {
+	val, err := strconv.Atoi(numAsStr)
+	if err != nil {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusBadRequest, Message: "Invalid " + fieldName},
+			err,
+		)
+		return 0
+	}
+
+	return val
+}
+
+func getRequiredQuery(c *gin.Context, queryName string) string {
+	query := c.Query(queryName)
+	if query == "" {
+		utils.Fail(
+			c,
+			&utils.APIError{Code: http.StatusBadRequest, Message: queryName + " query required"},
+			nil,
+		)
+		return ""
+	}
+
+	return query
+}
+
+func getRequiredQueryInt(c *gin.Context, queryName string) int {
+	queryStr := getRequiredQuery(c, queryName)
+	if queryStr == "" {
+		return 0
+	}
+
+	query := convStrToInt(c, queryStr, queryName)
+	if query == 0 {
+		return 0
+	}
+
+	return query
 }
