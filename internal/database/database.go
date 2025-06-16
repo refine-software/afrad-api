@@ -145,7 +145,7 @@ func (s *service) Product() ProductRepository {
 }
 
 func (s *service) ProductVariant() ProductVariantRepository {
-	return s.productRepo
+	return s.productVariantRepo
 }
 
 func (s *service) RatingReview() RatingReviewRepository {
