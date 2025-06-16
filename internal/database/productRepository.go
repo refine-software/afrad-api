@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/refine-software/afrad-api/internal/utils/filters"
 )
 
@@ -14,6 +15,8 @@ type ProductRepository interface {
 		filters filters.Filters,
 		prodFilter *filters.ProductFilterOptions,
 	) ([]Product, filters.Metadata, *DBError)
+
+	Get(ctx *gin.Context, db Querier, productID int) (*ProductDetails, *DBError)
 }
 
 type productRepo struct{}
@@ -42,11 +45,11 @@ func (p *productRepo) GetAll(
 	query := fmt.Sprintf(`
 	SELECT 
   	COUNT(*) OVER() AS total_records,
-  	products.id, 
-  	products.name, 
-  	products.thumbnail, 
+  	products.id,
+  	products.name,
+  	products.thumbnail,
   	brands.brand,
-  	categories.name AS category, 
+  	categories.name AS category,
   	MIN(product_variants.price) AS min_price,
   	COALESCE(ROUND(AVG(DISTINCT rating_review.rating)::numeric, 2), 0.00) AS avg_rating
 	FROM products
@@ -91,4 +94,46 @@ func (p *productRepo) GetAll(
 	metadata := filters.CalculateMetadata(totalRecords, f.Page, f.PageSize)
 
 	return products, metadata, nil
+}
+
+type ProductDetails struct {
+	ID         int32       `json:"id"`
+	Name       string      `json:"name"`
+	Details    pgtype.Text `json:"details"`
+	Thumbnail  string      `json:"thumbnail"`
+	BrandID    int         `json:"brandId"`
+	Brand      string      `json:"brand"`
+	CategoryID int         `json:"categoryId"`
+	Category   string      `json:"category"`
+}
+
+func (pr *productRepo) Get(
+	ctx *gin.Context,
+	db Querier,
+	productID int,
+) (*ProductDetails, *DBError) {
+	query := `
+		SELECT 
+			p.id,
+			p.name,
+			p.details,
+			p.thumbnail,
+			p.brand_id,
+			b.brand,
+			p.product_category,
+			c.name as category
+		FROM products p
+		JOIN brands b ON p.brand_id = b.id
+		JOIN categories c ON p.product_category = c.id
+		WHERE p.id = $1
+	`
+
+	var p ProductDetails
+	err := db.QueryRow(ctx, query, productID).
+		Scan(&p.ID, &p.Name, &p.Details, &p.Thumbnail, &p.BrandID, &p.Brand, &p.CategoryID, &p.Category)
+	if err != nil {
+		return nil, Parse(err, "Product", "Get")
+	}
+
+	return &p, nil
 }

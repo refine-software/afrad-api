@@ -48,7 +48,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	products := e.Group("/products")
 	{
 		products.GET("", s.getAllProducts)
-		products.GET("/:id")
+		products.GET("/:id", s.getProduct)
 		products.GET("/categories", s.getCategories)
 	}
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
