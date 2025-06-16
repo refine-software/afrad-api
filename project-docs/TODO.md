@@ -32,4 +32,4 @@
 - [x] Make sure to rollback like in the resend verification endpoint.
 - [x] Scan files sent, they have to be images and have to be under a certain size.
 - [x] S3 images aren't accessible in the browser, check bucket permissions.
-- [ ] DBErrors needs to containe the database error itself to, so we can show it to the programmer.
+- [x] DBErrors needs to containe the database error itself too, so we can show it to the programmer.
