@@ -12,14 +12,16 @@ type DBError struct {
 	Repo    string
 	Method  string
 	Code    string
+	Err     error
 }
 
-func NewDBError(message, repo, method, code string) *DBError {
+func NewDBError(err error, message, repo, method, code string) *DBError {
 	return &DBError{
 		Message: message,
 		Repo:    repo,
 		Method:  method,
 		Code:    code,
+		Err:     err,
 	}
 }
 
@@ -54,28 +56,28 @@ func Parse(err error, repo, method string) *DBError {
 	}
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return NewDBError(ErrNotFound, repo, method, "")
+		return NewDBError(err, ErrNotFound, repo, method, "")
 	}
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case uniqueViolationCode:
-			return NewDBError(ErrDuplicate, repo, method, uniqueViolationCode)
+			return NewDBError(err, ErrDuplicate, repo, method, uniqueViolationCode)
 		case foreignKeyViolationCode:
-			return NewDBError(ErrForeignKey, repo, method, foreignKeyViolationCode)
+			return NewDBError(err, ErrForeignKey, repo, method, foreignKeyViolationCode)
 		case notNullViolationCode:
-			return NewDBError(ErrNullViolation, repo, method, notNullViolationCode)
+			return NewDBError(err, ErrNullViolation, repo, method, notNullViolationCode)
 		case checkViolationCode:
-			return NewDBError(ErrCheckViolation, repo, method, checkViolationCode)
+			return NewDBError(err, ErrCheckViolation, repo, method, checkViolationCode)
 		case stringDataRightTruncationCode:
-			return NewDBError(ErrStringTooLong, repo, method, stringDataRightTruncationCode)
+			return NewDBError(err, ErrStringTooLong, repo, method, stringDataRightTruncationCode)
 		case invalidTextRepresentationCode:
-			return NewDBError(ErrInvalidFormat, repo, method, invalidTextRepresentationCode)
+			return NewDBError(err, ErrInvalidFormat, repo, method, invalidTextRepresentationCode)
 		default:
-			return NewDBError(ErrUnknown, repo, method, "")
+			return NewDBError(err, ErrUnknown, repo, method, "")
 		}
 	}
 
-	return NewDBError(ErrUnknown, repo, method, "")
+	return NewDBError(err, ErrUnknown, repo, method, "")
 }

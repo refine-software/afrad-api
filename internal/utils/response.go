@@ -25,11 +25,12 @@ func Fail(c *gin.Context, apiErr *APIError, loggedError error) {
 	var dbErr *database.DBError
 	if errors.As(loggedError, &dbErr) {
 		log.Printf(
-			"Database Error: %s | Repository: %s | Method: %s | Code: %s",
+			"Database Error: %s | Repository: %s | Method: %s | Code: %s | Error: %s",
 			dbErr.Message,
 			dbErr.Repo,
 			dbErr.Method,
 			dbErr.Code,
+			dbErr.Err.Error(),
 		)
 	} else {
 		log.Printf(
