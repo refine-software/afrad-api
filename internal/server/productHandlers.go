@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/refine-software/afrad-api/internal/database"
+	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
 	"github.com/refine-software/afrad-api/internal/utils/filters"
 	"github.com/refine-software/afrad-api/internal/utils/validator"
@@ -89,5 +90,61 @@ func (s *Server) getAllProducts(c *gin.Context) {
 	utils.Success(c, productsRes{
 		Metadata: metadata,
 		Products: products,
+	})
+}
+
+type productDetailsRes struct {
+	Product           database.ProductDetails            `json:"product"`
+	ProductVariants   []database.ProductVariantDetails   `json:"productVariants"` // will contain the color and size of each variant
+	RatingsAndReviews []database.RatingsAndReviewDetails `json:"ratingsAndReviews"`
+	Images            []models.Image                     `json:"images"`
+	Discount          []models.Discount                  `json:"discount"`
+}
+
+func (s *Server) getProduct(c *gin.Context) {
+	productID := convStrToInt(c, c.Param("id"), "product id")
+	if productID == 0 {
+		return
+	}
+
+	db := s.db.Pool()
+	productRepo := s.db.Product()
+	productVariantRepo := s.db.ProductVariant()
+	ratingsAndReviewsRepo := s.db.RatingReview()
+	imageRepo := s.db.Image()
+
+	p, dbErr := productRepo.Get(c, db, productID)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "product")
+		utils.Fail(c, apiErr, dbErr)
+		return
+	}
+
+	pvs, dbErr := productVariantRepo.GetAllOfProduct(c, db, p.ID)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
+		utils.Fail(c, apiErr, dbErr)
+		return
+	}
+
+	rrs, dbErr := ratingsAndReviewsRepo.GetAllOfProduct(c, db, p.ID)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
+		utils.Fail(c, apiErr, dbErr)
+		return
+	}
+
+	imgs, dbErr := imageRepo.GetAllOfProduct(c, db, p.ID)
+	if dbErr != nil {
+		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
+		utils.Fail(c, apiErr, dbErr)
+		return
+	}
+
+	utils.Success(c, productDetailsRes{
+		Product:           *p,
+		ProductVariants:   pvs,
+		RatingsAndReviews: rrs,
+		Images:            imgs,
 	})
 }
