@@ -60,7 +60,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 
 	user := protected.Group("/user")
 	{
-		user.GET("")
+		user.GET("", s.getUser)
 		user.PUT("")
 		user.DELETE("")
 		user.POST("/review")
