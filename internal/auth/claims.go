@@ -18,13 +18,13 @@ type AccessClaims struct {
 func GetAccessClaims(c *gin.Context) *AccessClaims {
 	claimsInterface, exists := c.Get("claims")
 	if !exists {
-		utils.Fail(c, utils.ErrUnauthorized, nil)
+		utils.Fail(c, utils.ErrUnauthorized, errors.New("no claims in token"))
 		return nil
 	}
 
 	claims, ok := claimsInterface.(*AccessClaims)
 	if !ok {
-		utils.Fail(c, utils.ErrUnauthorized, nil)
+		utils.Fail(c, utils.ErrUnauthorized, errors.New("bad claims type"))
 		return nil
 	}
 	return claims
