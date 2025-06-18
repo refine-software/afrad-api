@@ -12,7 +12,7 @@ type User struct {
 	LastName    pgtype.Text `json:"lastName"`
 	Image       pgtype.Text `json:"image"`
 	Email       string      `json:"email"`
-	PhoneNumber pgtype.Text `json:"PhoneNumber"`
+	PhoneNumber pgtype.Text `json:"phoneNumber"`
 	Role        Role        `json:"role"`
 	CreatedAt   time.Time   `json:"-"`
 	UpdatedAt   time.Time   `json:"-"`
