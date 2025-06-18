@@ -92,6 +92,11 @@ type ImageUpload struct {
 	Header *multipart.FileHeader
 }
 
+// this function will fetch the image from the request
+// and return the file and header.
+// it will return an api error,
+// but be careful this function might not return an error nither a file.
+// it treats the file as an optional form feild
 func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
 	// set the form to take 5MB or less files
 	const maxUpload = 5 << 20 // 5 MiB
