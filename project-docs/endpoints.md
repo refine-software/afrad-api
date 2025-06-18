@@ -27,24 +27,24 @@
 
 ## User
 
-| DONE | Method   | Endpoint                         | Description                       |
-| ---- | -------- | -------------------------------- | --------------------------------- |
-| ❌   | `GET`    | `/user`                          | Get user data                     |
-| ❌   | `PUT`    | `/user`                          | Update user data (name and image) |
-| ❌   | `DELETE` | `/user`                          | Delete self                       |
-| ❌   | `POST`   | `/user/review`                   | Review a product                  |
-| ❌   | `PUT`    | `/user/review`                   | Change review                     |
-| ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews                 |
-| ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preferences  |
-| ✅   | `POST`   | `/user/logout`                   | Revoke the current session        |
-| ✅   | `POST`   | `/user/logout/all`               | Revoke all sessions               |
+| DONE | Method   | Endpoint                         | Description                      |
+| ---- | -------- | -------------------------------- | -------------------------------- |
+| ❌   | `GET`    | `/user`                          | Get user data                    |
+| ❌   | `PUT`    | `/user`                          | Update user data                 |
+| ❌   | `DELETE` | `/user`                          | Delete self                      |
+| ❌   | `POST`   | `/user/review`                   | Review a product                 |
+| ❌   | `PUT`    | `/user/review`                   | Change review                    |
+| ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews                |
+| ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preferences |
+| ✅   | `POST`   | `/user/logout`                   | Revoke the current session       |
+| ✅   | `POST`   | `/user/logout/all`               | Revoke all sessions              |
 
 ## Product
 
 | DONE | Method   | Endpoint             | Description                                          |
 | ---- | -------- | -------------------- | ---------------------------------------------------- |
-| ❌   | `GET`    | `/products`          | Fetch products with pagination and search and filter |
-| ❌   | `GET`    | `/product/:id`       | Fetch product details                                |
+| ✅   | `GET`    | `/products`          | Fetch products with pagination and search and filter |
+| ✅   | `GET`    | `/product/:id`       | Fetch product details                                |
 | ❌   | `PUT`    | `/admin/product/:id` | Update product (Admin only)                          |
 | ❌   | `DELETE` | `/admin/product/:id` | Delete product (Admin only)                          |
 | ❌   | `POST`   | `/admin/product`     | Add a product (Admin only)                           |
