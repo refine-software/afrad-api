@@ -15,8 +15,11 @@ type UserRepository interface {
 	// based on the user id.
 	Update(ctx *gin.Context, db Querier, u *models.User) *DBError
 
+	// Get user by id
+	Get(ctx *gin.Context, db Querier, id int) (*models.User, *DBError)
+
 	// Get user by email
-	Get(ctx *gin.Context, db Querier, email string) (*models.User, *DBError)
+	GetByEmail(ctx *gin.Context, db Querier, email string) (*models.User, *DBError)
 
 	// Get the user role by user id
 	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, *DBError)
@@ -68,6 +71,34 @@ func (r *userRepo) Update(ctx *gin.Context, db Querier, u *models.User) *DBError
 func (r *userRepo) Get(
 	ctx *gin.Context,
 	db Querier,
+	id int,
+) (*models.User, *DBError) {
+	query := `SELECT id, first_name, last_name, image, email, role, created_at, updated_at, phone_number
+	FROM users 
+	WHERE id = $1
+	`
+	var u models.User
+	err := db.QueryRow(ctx, query, id).Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Image,
+		&u.Email,
+		&u.Role,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+		&u.PhoneNumber,
+	)
+	if err != nil {
+		return nil, Parse(err, "User", "Get")
+	}
+
+	return &u, nil
+}
+
+func (r *userRepo) GetByEmail(
+	ctx *gin.Context,
+	db Querier,
 	email string,
 ) (*models.User, *DBError) {
 	query := `SELECT id, first_name, last_name, image, email, role, created_at, updated_at
@@ -87,7 +118,7 @@ func (r *userRepo) Get(
 		&u.UpdatedAt,
 	)
 	if err != nil {
-		return nil, Parse(err, "User", "Get")
+		return nil, Parse(err, "User", "GetByEmail")
 	}
 
 	return &u, nil

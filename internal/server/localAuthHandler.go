@@ -292,7 +292,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 	}()
 
 	// get user
-	user, dbErr := userRepo.Get(c, db, req.Email)
+	user, dbErr := userRepo.GetByEmail(c, db, req.Email)
 	if dbErr != nil {
 		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
 		utils.Fail(c, apiErr, dbErr)

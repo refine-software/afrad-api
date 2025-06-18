@@ -46,7 +46,7 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	user, dbErr := userRepo.Get(ctx, db, req.Email)
+	user, dbErr := userRepo.GetByEmail(ctx, db, req.Email)
 	if dbErr != nil {
 		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
 		utils.Fail(ctx, apiErr, dbErr)

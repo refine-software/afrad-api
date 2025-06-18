@@ -44,7 +44,7 @@ func (s *Server) upsertUser(
 	userRepo := s.db.User()
 	oauthRepo := s.db.Oauth()
 
-	u, dbErr := userRepo.Get(c, db, user.Email)
+	u, dbErr := userRepo.GetByEmail(c, db, user.Email)
 	if dbErr != nil && dbErr.Message != database.ErrNotFound {
 		return nil, upsertResult{
 			APIError: utils.MapDBErrorToAPIError(dbErr, "user"),
