@@ -134,3 +134,44 @@ func bindEnvVariables() {
 		}
 	}
 }
+
+func NewTestEnv() *Env {
+	env := &Env{
+		Environment:           "test",
+		Port:                  8081,
+		MaxOTPRequestsPerDay:  5,
+		OTPExpInMin:           10,
+		DBHost:                "localhost",
+		DBPort:                "5433",
+		DBName:                "testdb",
+		DBUsername:            "testuser",
+		DBPassword:            "testpass",
+		DBSchema:              "public",
+		SSLMode:               "disable",
+		S3AccessKey:           "fake-access-key",
+		S3SecretAccessKey:     "fake-secret-key",
+		S3Region:              "us-east-1",
+		S3Bucket:              "test-bucket",
+		SessionKey:            "test-session-key",
+		GoogleClientID:        "test-google-id",
+		GoogleClientSecret:    "test-google-secret",
+		AccessTokenSecret:     "test-access-secret",
+		RefreshTokenSecret:    "test-refresh-secret",
+		AccessTokenExpInMin:   15,
+		RefreshTokenExpInDays: 7,
+		HashSecret:            "test-hash-secret",
+		Email:                 "test@example.com",
+		Password:              "emailpassword",
+	}
+
+	env.DBUrl = fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		env.DBUsername,
+		env.DBPassword,
+		env.DBHost,
+		env.DBPort,
+		env.DBName,
+		env.SSLMode,
+	)
+	return env
+}

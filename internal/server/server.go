@@ -17,9 +17,10 @@ import (
 type Server struct {
 	port int
 
-	db  database.Service
-	env *config.Env
-	s3  *s3.S3Storage
+	DB    database.Service
+	Env   *config.Env
+	S3    s3.S3
+	Email auth.EmailSender
 }
 
 func NewServer() *http.Server {
@@ -40,9 +41,10 @@ func NewServer() *http.Server {
 	NewServer := &Server{
 		port: env.Port,
 
-		db:  database.New(env),
-		env: env,
-		s3:  s3Storage,
+		DB:    database.New(env),
+		Env:   env,
+		S3:    s3Storage,
+		Email: auth.NewEmailService(env.Email, env.Password),
 	}
 
 	// Declare Server config

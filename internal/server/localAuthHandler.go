@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
+	"github.com/refine-software/afrad-api/internal/utils/validator"
 )
 
 type registerReq struct {
@@ -47,6 +47,12 @@ func (s *Server) register(ctx *gin.Context) {
 		return
 	}
 
+	validEmail := validator.Matches(req.Email, validator.EmailRX)
+	if !validEmail {
+		utils.Fail(ctx, &utils.APIError{Code: http.StatusBadRequest, Message: "invalid email"}, err)
+		return
+	}
+
 	imgURL := pgtype.Text{String: "", Valid: false}
 	imgUpload, apiErr := getImageFile(ctx)
 	if apiErr != nil {
@@ -57,7 +63,7 @@ func (s *Server) register(ctx *gin.Context) {
 		defer imgUpload.File.Close()
 
 		var uploadedURL string
-		uploadedURL, err = s.s3.UploadImage(ctx, imgUpload.File, imgUpload.Header)
+		uploadedURL, err = s.S3.UploadImage(ctx, imgUpload.File, imgUpload.Header)
 		if err != nil {
 			utils.Fail(ctx, utils.ErrInternal, err)
 			return
@@ -66,9 +72,9 @@ func (s *Server) register(ctx *gin.Context) {
 		imgURL.Valid = true
 	}
 
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
-	otpCodeRepo := s.db.AccountVerificationCode()
+	userRepo := s.DB.User()
+	localAuthRepo := s.DB.LocalAuth()
+	otpCodeRepo := s.DB.AccountVerificationCode()
 
 	user := &models.User{
 		FirstName:   req.FirstName,
@@ -87,7 +93,7 @@ func (s *Server) register(ctx *gin.Context) {
 	}
 
 	// start a transaction for creating a user
-	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err = s.DB.WithTransaction(ctx, func(tx pgx.Tx) error {
 		var userID int
 		userID, err = userRepo.Create(ctx, tx, user)
 		if err != nil {
@@ -107,13 +113,13 @@ func (s *Server) register(ctx *gin.Context) {
 		err = otpCodeRepo.Create(ctx, tx, &models.AccountVerificationCode{
 			UserID:    int32(userID),
 			OtpCode:   otp,
-			ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
+			ExpiresAt: utils.GetExpTimeAfterMins(s.Env.OTPExpInMin),
 		})
 		if err != nil {
 			return err
 		}
 
-		err = auth.SendOtpEmail(req.Email, otp, s.env)
+		err = s.Email.SendOtpEmail(req.Email, otp)
 		if err != nil {
 			return err
 		}
@@ -124,7 +130,7 @@ func (s *Server) register(ctx *gin.Context) {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
 		utils.Fail(ctx, apiErr, err)
 		if imgURL.String != "" {
-			_ = s.s3.DeleteImageByURL(ctx, imgURL.String)
+			_ = s.S3.DeleteImageByURL(ctx, imgURL.String)
 		}
 		return
 	}
@@ -156,10 +162,10 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	db := s.db.Pool()
-	userRepo := s.db.User()
-	otpCodeRepo := s.db.AccountVerificationCode()
-	localAuthRepo := s.db.LocalAuth()
+	db := s.DB.Pool()
+	userRepo := s.DB.User()
+	otpCodeRepo := s.DB.AccountVerificationCode()
+	localAuthRepo := s.DB.LocalAuth()
 
 	// check if email exists in the database
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
@@ -218,7 +224,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	}
 
 	// start a transaction
-	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err = s.DB.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = localAuthRepo.UpdateIsAccountVerifiedToTrue(ctx, tx, int32(userID))
 		if err != nil {
 			return err
@@ -264,10 +270,10 @@ func (s *Server) resendVerification(c *gin.Context) {
 		return
 	}
 
-	accVerificationRepo := s.db.AccountVerificationCode()
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
-	db, err := s.db.BeginTx(c)
+	accVerificationRepo := s.DB.AccountVerificationCode()
+	userRepo := s.DB.User()
+	localAuthRepo := s.DB.LocalAuth()
+	db, err := s.DB.BeginTx(c)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -317,7 +323,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 		return
 	}
 
-	if numOfOTPs > s.env.MaxOTPRequestsPerDay {
+	if numOfOTPs > s.Env.MaxOTPRequestsPerDay {
 		utils.Fail(
 			c,
 			&utils.APIError{
@@ -335,7 +341,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 	// store OTP
 	a := models.AccountVerificationCode{
 		OtpCode:   otp,
-		ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
+		ExpiresAt: utils.GetExpTimeAfterMins(s.Env.OTPExpInMin),
 		UserID:    user.ID,
 	}
 	err = accVerificationRepo.Create(c, db, &a)
@@ -346,7 +352,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 	}
 
 	// send verificaion OTP
-	err = auth.SendOtpEmail(user.Email, otp, s.env)
+	err = s.Email.SendOtpEmail(user.Email, otp)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -410,9 +416,9 @@ func (s *Server) refreshTokens(c *gin.Context) {
 		return
 	}
 
-	sessionRepo := s.db.Session()
-	userRepo := s.db.User()
-	db := s.db.Pool()
+	sessionRepo := s.DB.Session()
+	userRepo := s.DB.User()
+	db := s.DB.Pool()
 
 	// Validate the refresh token:
 	// 		- exists in the database
@@ -445,7 +451,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	}
 
 	// validate refresh token
-	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.HashSecret); !ok {
+	if ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.Env.HashSecret); !ok {
 		utils.Fail(
 			c,
 			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
@@ -471,13 +477,13 @@ func (s *Server) refreshTokens(c *gin.Context) {
 		return
 	}
 
-	hashedRefresh, err := utils.HashToken(newRefresh, s.env.HashSecret)
+	hashedRefresh, err := utils.HashToken(newRefresh, s.Env.HashSecret)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
 	}
 
-	refreshExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	refreshExpTime := utils.GetExpTimeAfterDays(s.Env.RefreshTokenExpInDays)
 
 	session.RefreshToken = hashedRefresh
 	session.ExpiresAt = refreshExpTime

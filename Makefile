@@ -47,7 +47,7 @@ create-migration:
 # Test the application
 test:
 	@echo "Testing..."
-	@go test ./... -v
+	@go test ./internal/test/ -v
 # Integrations Tests for the application
 itest:
 	@echo "Running integration tests..."

@@ -24,8 +24,8 @@ func (s *Server) createCategory(ctx *gin.Context) {
 		return
 	}
 
-	categoryRepo := s.db.Category()
-	db := s.db.Pool()
+	categoryRepo := s.DB.Category()
+	db := s.DB.Pool()
 
 	parentID := pgtype.Int4{Valid: false}
 	if req.ParentID != nil {
@@ -50,8 +50,8 @@ type getCategoriesRes struct {
 }
 
 func (s *Server) getCategories(ctx *gin.Context) {
-	categoryRepo := s.db.Category()
-	db := s.db.Pool()
+	categoryRepo := s.DB.Category()
+	db := s.DB.Pool()
 
 	categories, err := categoryRepo.GetAll(ctx, db)
 	if err != nil {
@@ -66,8 +66,8 @@ func (s *Server) getCategories(ctx *gin.Context) {
 }
 
 func (s *Server) deleteCategory(ctx *gin.Context) {
-	categoryRepo := s.db.Category()
-	db := s.db.Pool()
+	categoryRepo := s.DB.Category()
+	db := s.DB.Pool()
 
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -120,8 +120,8 @@ func (s *Server) updateCategory(ctx *gin.Context) {
 		return
 	}
 
-	categoryRepo := s.db.Category()
-	db := s.db.Pool()
+	categoryRepo := s.DB.Category()
+	db := s.DB.Pool()
 
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)

@@ -36,10 +36,10 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
-	sessionRepo := s.db.Session()
-	db := s.db.Pool()
+	userRepo := s.DB.User()
+	localAuthRepo := s.DB.LocalAuth()
+	sessionRepo := s.DB.Session()
+	db := s.DB.Pool()
 
 	fmt.Println("CheckEmailExistence")
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
@@ -85,7 +85,7 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	hashedNewRefreshToken, err := utils.HashToken(newRefreshToken, s.env.HashSecret)
+	hashedNewRefreshToken, err := utils.HashToken(newRefreshToken, s.Env.HashSecret)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrInternal, err)
 		return
@@ -105,7 +105,7 @@ func (s *Server) login(ctx *gin.Context) {
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
-	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	sessExpTime := utils.GetExpTimeAfterDays(s.Env.RefreshTokenExpInDays)
 	if err != nil && database.IsDBNotFoundErr(err) {
 		session = models.Session{
 			UserID:       user.ID,
@@ -168,8 +168,8 @@ func (s *Server) logout(c *gin.Context) {
 		return
 	}
 
-	db := s.db.Pool()
-	sessionRepo := s.db.Session()
+	db := s.DB.Pool()
+	sessionRepo := s.DB.Session()
 
 	userAgent := getHeader(c, "User-Agent")
 	if userAgent == "" {
@@ -190,7 +190,7 @@ func (s *Server) logout(c *gin.Context) {
 	}
 
 	// Check refresh token validity
-	ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.env.RefreshTokenSecret)
+	ok := utils.VerifyToken(session.RefreshToken, refreshToken, s.Env.RefreshTokenSecret)
 	if !ok {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -229,8 +229,8 @@ func (s *Server) logoutFromAllSessions(c *gin.Context) {
 		return
 	}
 
-	db := s.db.Pool()
-	sessionRepo := s.db.Session()
+	db := s.DB.Pool()
+	sessionRepo := s.DB.Session()
 
 	err = sessionRepo.RevokeAllOfUser(c, db, int32(userID))
 	if err != nil {

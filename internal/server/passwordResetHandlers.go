@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
@@ -34,10 +33,10 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
 		return
 	}
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
-	passwordRestRepo := s.db.PasswordReset()
-	db := s.db.Pool()
+	userRepo := s.DB.User()
+	localAuthRepo := s.DB.LocalAuth()
+	passwordRestRepo := s.DB.PasswordReset()
+	db := s.DB.Pool()
 
 	// check if the  exists
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
@@ -78,7 +77,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
-	if countOTPs > s.env.MaxOTPRequestsPerDay {
+	if countOTPs > s.Env.MaxOTPRequestsPerDay {
 		utils.Fail(ctx, utils.ErrForbidden, errors.New("max otp attempts per day"))
 		return
 	}
@@ -88,7 +87,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 
 	err = passwordRestRepo.Create(ctx, db, &models.PasswordReset{
 		OtpCode:   otp,
-		ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
+		ExpiresAt: utils.GetExpTimeAfterMins(s.Env.OTPExpInMin),
 		UserID:    int32(userID),
 	})
 	if err != nil {
@@ -98,7 +97,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	}
 
 	// send OTP via email
-	err = auth.SendOtpEmail(req.Email, otp, s.env)
+	err = s.Email.SendOtpEmail(req.Email, otp)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrInternal, err)
 		return
@@ -132,10 +131,10 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 		return
 	}
 
-	userRepo := s.db.User()
-	localAuthRepo := s.db.LocalAuth()
-	passwordRestRepo := s.db.PasswordReset()
-	db := s.db.Pool()
+	userRepo := s.DB.User()
+	localAuthRepo := s.DB.LocalAuth()
+	passwordRestRepo := s.DB.PasswordReset()
+	db := s.DB.Pool()
 
 	// get the user_id by email
 	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
@@ -170,7 +169,7 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 		return
 	}
 
-	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
+	err = s.DB.WithTransaction(ctx, func(tx pgx.Tx) error {
 		err = localAuthRepo.Update(ctx, tx, &models.LocalAuth{
 			UserID:            int32(userID),
 			IsAccountVerified: true,

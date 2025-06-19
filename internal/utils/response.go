@@ -14,7 +14,7 @@ func Success(c *gin.Context, data any) {
 }
 
 func Created(c *gin.Context, data any) {
-	c.JSON(http.StatusOK, data)
+	c.JSON(http.StatusCreated, data)
 }
 
 func NoContent(c *gin.Context) {

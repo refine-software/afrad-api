@@ -37,16 +37,16 @@ func (s *Server) generateTokens(userID, role string) (access, refresh string, er
 	access, err = auth.GenerateAccessToken(
 		userID,
 		role,
-		s.env.AccessTokenSecret,
-		s.env.AccessTokenExpInMin,
+		s.Env.AccessTokenSecret,
+		s.Env.AccessTokenExpInMin,
 	)
 	if err != nil {
 		return
 	}
 	refresh, err = auth.GenerateRefreshToken(
 		userID,
-		s.env.RefreshTokenSecret,
-		s.env.RefreshTokenExpInDays,
+		s.Env.RefreshTokenSecret,
+		s.Env.RefreshTokenExpInDays,
 	)
 	return
 }
@@ -66,11 +66,11 @@ func getHeader(c *gin.Context, key string) string {
 
 func (s *Server) setCookie(c *gin.Context, cookieName, cookieVal string) {
 	var secure bool
-	if s.env.Environment == "prod" {
+	if s.Env.Environment == "prod" {
 		secure = true
 	}
 
-	expTimeInSec := int((time.Hour * 24 * time.Duration(s.env.RefreshTokenExpInDays)).Seconds())
+	expTimeInSec := int((time.Hour * 24 * time.Duration(s.Env.RefreshTokenExpInDays)).Seconds())
 
 	c.SetCookie(
 		cookieName,

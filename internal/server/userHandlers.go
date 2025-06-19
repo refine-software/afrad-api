@@ -14,8 +14,8 @@ func (s *Server) getUser(c *gin.Context) {
 		return
 	}
 
-	db := s.db.Pool()
-	userRepo := s.db.User()
+	db := s.DB.Pool()
+	userRepo := s.DB.User()
 
 	userID, err := strconv.Atoi(claims.Subject)
 	if err != nil {

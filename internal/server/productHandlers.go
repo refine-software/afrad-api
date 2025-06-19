@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -71,10 +70,8 @@ func (s *Server) getAllProducts(c *gin.Context) {
 		Search:     search,
 	}
 
-	fmt.Println(productsFilterOptions)
-
-	db := s.db.Pool()
-	product := s.db.Product()
+	db := s.DB.Pool()
+	product := s.DB.Product()
 	products, metadata, err := product.GetAll(c, db, f, &productsFilterOptions)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "product")
@@ -107,11 +104,11 @@ func (s *Server) getProduct(c *gin.Context) {
 		return
 	}
 
-	db := s.db.Pool()
-	productRepo := s.db.Product()
-	productVariantRepo := s.db.ProductVariant()
-	ratingsAndReviewsRepo := s.db.RatingReview()
-	imageRepo := s.db.Image()
+	db := s.DB.Pool()
+	productRepo := s.DB.Product()
+	productVariantRepo := s.DB.ProductVariant()
+	ratingsAndReviewsRepo := s.DB.RatingReview()
+	imageRepo := s.DB.Image()
 
 	p, err := productRepo.Get(c, db, productID)
 	if err != nil {

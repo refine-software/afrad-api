@@ -56,7 +56,7 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 
 func (s *Server) registerUserRoutes(e *gin.Engine) {
 	protected := e.Group("")
-	protected.Use(middleware.AuthRequired(s.env.AccessTokenSecret))
+	protected.Use(middleware.AuthRequired(s.Env.AccessTokenSecret))
 
 	user := protected.Group("/user")
 	{

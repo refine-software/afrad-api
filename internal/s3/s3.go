@@ -17,6 +17,16 @@ import (
 	conf "github.com/refine-software/afrad-api/config"
 )
 
+type S3 interface {
+	UploadImage(
+		ctx *gin.Context,
+		file multipart.File,
+		fileHeader *multipart.FileHeader,
+	) (string, error)
+
+	DeleteImageByURL(ctx *gin.Context, fileURL string) error
+}
+
 type S3Storage struct {
 	client     *s3.Client
 	bucketName string

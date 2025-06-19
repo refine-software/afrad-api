@@ -41,8 +41,8 @@ func (s *Server) upsertUser(
 	user goth.User,
 	role models.Role,
 ) (u *models.User, resultErr upsertResult) {
-	userRepo := s.db.User()
-	oauthRepo := s.db.Oauth()
+	userRepo := s.DB.User()
+	oauthRepo := s.DB.Oauth()
 
 	u, err := userRepo.GetByEmail(c, db, user.Email)
 	if err != nil && database.IsDBNotFoundErr(err) {
@@ -123,8 +123,8 @@ func (s *Server) googleCallback(c *gin.Context) {
 		return
 	}
 
-	sessionRepo := s.db.Session()
-	db, err := s.db.BeginTx(c)
+	sessionRepo := s.DB.Session()
+	db, err := s.DB.BeginTx(c)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -154,7 +154,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 	}
 
 	// hash refresh token
-	hashedRefresh, err := utils.HashToken(refreshToken, s.env.HashSecret)
+	hashedRefresh, err := utils.HashToken(refreshToken, s.Env.HashSecret)
 	if err != nil {
 		utils.Fail(c, utils.ErrInternal, err)
 		return
@@ -167,7 +167,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		utils.Fail(c, apiErr, err)
 		return
 	}
-	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
+	sessExpTime := utils.GetExpTimeAfterDays(s.Env.RefreshTokenExpInDays)
 	if err != nil && database.IsDBNotFoundErr(err) {
 		session = models.Session{
 			UserID:       u.ID,
