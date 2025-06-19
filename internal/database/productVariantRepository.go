@@ -5,7 +5,7 @@ import (
 )
 
 type ProductVariantRepository interface {
-	GetAllOfProduct(c *gin.Context, db Querier, productID int32) ([]ProductVariantDetails, *DBError)
+	GetAllOfProduct(c *gin.Context, db Querier, productID int32) ([]ProductVariantDetails, error)
 }
 
 type productVariantRepo struct{}
@@ -26,7 +26,7 @@ func (pvr *productVariantRepo) GetAllOfProduct(
 	c *gin.Context,
 	db Querier,
 	productID int32,
-) ([]ProductVariantDetails, *DBError) {
+) ([]ProductVariantDetails, error) {
 	query := `
 		SELECT 
 			pv.id, 

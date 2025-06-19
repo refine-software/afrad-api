@@ -15,8 +15,8 @@ type DBError struct {
 	Err     error
 }
 
-func NewDBError(err error, message, repo, method, code string) *DBError {
-	return &DBError{
+func NewDBError(err error, message, repo, method, code string) DBError {
+	return DBError{
 		Message: message,
 		Repo:    repo,
 		Method:  method,
@@ -25,8 +25,18 @@ func NewDBError(err error, message, repo, method, code string) *DBError {
 	}
 }
 
-func (e *DBError) Error() string {
+func (e DBError) Error() string {
 	return e.Message
+}
+
+func IsDBNotFoundErr(err error) bool {
+	var dbErr DBError
+	ok := errors.As(err, &dbErr)
+	if !ok {
+		return false
+	}
+
+	return dbErr.Message == ErrNotFound
 }
 
 var (
@@ -50,7 +60,7 @@ var (
 	checkViolationCode            = "23514"
 )
 
-func Parse(err error, repo, method string) *DBError {
+func Parse(err error, repo, method string) error {
 	if err == nil {
 		return nil
 	}

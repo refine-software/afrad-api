@@ -6,7 +6,7 @@ import (
 )
 
 type OAuthRepository interface {
-	Create(ctx *gin.Context, db Querier, oauth *models.OAuth) *DBError
+	Create(ctx *gin.Context, db Querier, oauth *models.OAuth) error
 }
 
 type oAuthRepo struct{}
@@ -19,7 +19,7 @@ func (a *oAuthRepo) Create(
 	ctx *gin.Context,
 	db Querier,
 	oauth *models.OAuth,
-) *DBError {
+) error {
 	query := `
 		INSERT INTO oauth(user_id, provider, provider_id)
 		VALUES ($1, $2, $3)

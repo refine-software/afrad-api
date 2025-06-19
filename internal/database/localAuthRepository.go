@@ -7,26 +7,26 @@ import (
 
 type LocalAuthRepository interface {
 	// fetch the local auth model
-	Get(ctx *gin.Context, db Querier, userID int32) (*models.LocalAuth, *DBError)
+	Get(ctx *gin.Context, db Querier, userID int32) (*models.LocalAuth, error)
 
 	// create JWT based authentication,
 	// columns required: user_id, password_hash.
-	Create(ctx *gin.Context, db Querier, l *models.LocalAuth) *DBError
+	Create(ctx *gin.Context, db Querier, l *models.LocalAuth) error
 
 	// update user local auth,
 	// required columns: is_phone_verified, password_hash,
 	// by user_id.
-	Update(ctx *gin.Context, db Querier, l *models.LocalAuth) *DBError
+	Update(ctx *gin.Context, db Querier, l *models.LocalAuth) error
 
 	// update is_account_verified column to true,
 	// by user_id.
-	UpdateIsAccountVerifiedToTrue(ctx *gin.Context, db Querier, userID int32) *DBError
+	UpdateIsAccountVerifiedToTrue(ctx *gin.Context, db Querier, userID int32) error
 
 	CheckUserVerification(
 		ctx *gin.Context,
 		db Querier,
 		userID int32,
-	) (bool, *DBError)
+	) (bool, error)
 }
 
 type localAuthRepo struct{}
@@ -39,7 +39,7 @@ func (r *localAuthRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (*models.LocalAuth, *DBError) {
+) (*models.LocalAuth, error) {
 	query := `
 	SELECT user_id, is_account_verified, password_hash
 	FROM local_auth
@@ -55,7 +55,7 @@ func (r *localAuthRepo) Get(
 	return &l, nil
 }
 
-func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth) *DBError {
+func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth) error {
 	query := `
 		INSERT INTO local_auth(user_id, password_hash)
 		VALUES ($1, $2)
@@ -67,7 +67,7 @@ func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth
 	return nil
 }
 
-func (r *localAuthRepo) Update(ctx *gin.Context, db Querier, l *models.LocalAuth) *DBError {
+func (r *localAuthRepo) Update(ctx *gin.Context, db Querier, l *models.LocalAuth) error {
 	query := `
 		UPDATE local_auth
 		SET is_account_verified = $2, password_hash = $3
@@ -84,7 +84,7 @@ func (r *localAuthRepo) UpdateIsAccountVerifiedToTrue(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) *DBError {
+) error {
 	query := `
 		UPDATE local_auth
 		SET is_account_verified = true
@@ -101,7 +101,7 @@ func (r *localAuthRepo) CheckUserVerification(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (bool, *DBError) {
+) (bool, error) {
 	query := `
 		SELECT is_account_verified
 		FROM local_auth

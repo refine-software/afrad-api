@@ -30,6 +30,8 @@ type Service interface {
 	User() UserRepository
 	Session() SessionRepository
 	Pool() *pgxpool.Pool
+	// Make sure to use this method when all errors being returned are db errors.
+	// you can use it when other errors are being returned but still.
 	WithTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
 	BeginTx(ctx *gin.Context) (pgx.Tx, error)
 	Close()

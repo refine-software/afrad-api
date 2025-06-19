@@ -36,10 +36,10 @@ func (s *Server) createCategory(ctx *gin.Context) {
 		ParentID: parentID,
 	}
 
-	_, dbErr := categoryRepo.Create(ctx, db, c)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "category")
-		utils.Fail(ctx, apiErr, dbErr)
+	_, err = categoryRepo.Create(ctx, db, c)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 	utils.Created(ctx, "category created")
@@ -53,10 +53,10 @@ func (s *Server) getCategories(ctx *gin.Context) {
 	categoryRepo := s.db.Category()
 	db := s.db.Pool()
 
-	categories, dbErr := categoryRepo.GetAll(ctx, db)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "categories")
-		utils.Fail(ctx, apiErr, dbErr)
+	categories, err := categoryRepo.GetAll(ctx, db)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "categories")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -75,33 +75,33 @@ func (s *Server) deleteCategory(ctx *gin.Context) {
 		utils.Fail(ctx, utils.ErrInternal, err)
 	}
 
-	dbErr := categoryRepo.CheckExistence(ctx, db, int32(id))
-	if dbErr != nil && dbErr.Message == database.ErrNotFound {
+	err = categoryRepo.CheckExistence(ctx, db, int32(id))
+	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusBadRequest,
 				Message: "category doesn't exists",
 			},
-			dbErr,
+			err,
 		)
 	}
 
-	dbErr = categoryRepo.Delete(ctx, db, int32(id))
-	if dbErr != nil && dbErr.Message == database.ErrForeignKey {
+	err = categoryRepo.Delete(ctx, db, int32(id))
+	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusBadRequest,
 				Message: "can not delete this category, you should delete its childs first",
 			},
-			dbErr,
+			err,
 		)
 	}
 
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "category")
-		utils.Fail(ctx, apiErr, dbErr)
+		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -129,23 +129,23 @@ func (s *Server) updateCategory(ctx *gin.Context) {
 		utils.Fail(ctx, utils.ErrInternal, err)
 	}
 
-	dbErr := categoryRepo.CheckExistence(ctx, db, int32(id))
-	if dbErr != nil && dbErr.Message == database.ErrNotFound {
+	err = categoryRepo.CheckExistence(ctx, db, int32(id))
+	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusBadRequest,
 				Message: "category doesn't exists",
 			},
-			dbErr,
+			err,
 		)
 		return
 	}
 
-	dbErr = categoryRepo.Update(ctx, db, int32(id), req.Name)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "category")
-		utils.Fail(ctx, apiErr, dbErr)
+	err = categoryRepo.Update(ctx, db, int32(id), req.Name)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 

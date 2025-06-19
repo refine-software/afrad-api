@@ -12,26 +12,26 @@ type SessionRepository interface {
 		db Querier,
 		userID int32,
 		userAgent string,
-	) (models.Session, *DBError)
+	) (models.Session, error)
 
 	// Fetch all sessions of a certain user
 	GetAllOfUser(
 		ctx *gin.Context,
 		db Querier,
 		userID int32,
-	) ([]models.Session, *DBError)
+	) ([]models.Session, error)
 
 	// This method will create a session, the following columns are required:
 	// user_id, user_agent, refresh_token, expires_at.
-	Create(ctx *gin.Context, db Querier, sess *models.Session) *DBError
+	Create(ctx *gin.Context, db Querier, sess *models.Session) error
 
 	// Update the user session with the following columns:
 	// revoked, refresh_token, expires_at.
 	// the session will be updated using its id.
-	Update(ctx *gin.Context, db Querier, sess *models.Session) *DBError
+	Update(ctx *gin.Context, db Querier, sess *models.Session) error
 
 	// This method will revoke all sessions of a certain user
-	RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) *DBError
+	RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error
 }
 
 type sessionRepo struct{}
@@ -45,7 +45,7 @@ func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
 	db Querier,
 	userID int32,
 	userAgent string,
-) (models.Session, *DBError) {
+) (models.Session, error) {
 	query := `
 	SELECT id, revoked, user_agent, refresh_token, expires_at, created_at, updated_at, user_id 
 	FROM sessions 
@@ -71,7 +71,7 @@ func (s *sessionRepo) GetAllOfUser(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) ([]models.Session, *DBError) {
+) ([]models.Session, error) {
 	query := `
 	SELECT id, revoked, user_agent, refresh_token, expires_at, created_at, updated_at, user_id
 	FROM sessions
@@ -99,7 +99,7 @@ func (s *sessionRepo) GetAllOfUser(
 	return sessions, nil
 }
 
-func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) *DBError {
+func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) error {
 	query := `
 	INSERT INTO sessions(user_id, user_agent, refresh_token, expires_at)
 	VALUES ($1, $2, $3, $4)
@@ -109,7 +109,7 @@ func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session)
 	return Parse(err, "Session", "Create")
 }
 
-func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) *DBError {
+func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) error {
 	query := `
 	UPDATE sessions
 	SET revoked = $2, refresh_token = $3, expires_at = $4
@@ -120,7 +120,7 @@ func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session)
 	return Parse(err, "Session", "Update")
 }
 
-func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) *DBError {
+func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error {
 	query := `
 		UPDATE sessions
 		SET revoked = true

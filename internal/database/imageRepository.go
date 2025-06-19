@@ -10,7 +10,7 @@ type ImageRepository interface {
 		c *gin.Context,
 		db Querier,
 		productID int32,
-	) ([]models.Image, *DBError)
+	) ([]models.Image, error)
 }
 
 type imageRepo struct{}
@@ -23,7 +23,7 @@ func (repo *imageRepo) GetAllOfProduct(
 	c *gin.Context,
 	db Querier,
 	productID int32,
-) ([]models.Image, *DBError) {
+) ([]models.Image, error) {
 	query := `
 		SELECT id, image, low_res_image
 		FROM images

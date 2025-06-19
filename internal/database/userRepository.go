@@ -8,27 +8,27 @@ import (
 type UserRepository interface {
 	// This method will create the user, with the following data:
 	// first_name, last_name, image, email, phone_number, role.
-	Create(ctx *gin.Context, db Querier, user *models.User) (int, *DBError)
+	Create(ctx *gin.Context, db Querier, user *models.User) (int, error)
 
 	// This method will update the following user columns:
 	// first_name, last_name, image, role.
 	// based on the user id.
-	Update(ctx *gin.Context, db Querier, u *models.User) *DBError
+	Update(ctx *gin.Context, db Querier, u *models.User) error
 
 	// Get user by id
-	Get(ctx *gin.Context, db Querier, id int) (*models.User, *DBError)
+	Get(ctx *gin.Context, db Querier, id int) (*models.User, error)
 
 	// Get user by email
-	GetByEmail(ctx *gin.Context, db Querier, email string) (*models.User, *DBError)
+	GetByEmail(ctx *gin.Context, db Querier, email string) (*models.User, error)
 
 	// Get the user role by user id
-	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, *DBError)
+	GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error)
 
 	// Get user id by email
-	GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, *DBError)
+	GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, error)
 
 	// Check if email is exist
-	CheckEmailExistence(ctx *gin.Context, db Querier, email string) *DBError
+	CheckEmailExistence(ctx *gin.Context, db Querier, email string) error
 }
 
 type userRepo struct{}
@@ -37,7 +37,7 @@ func NewUserRepository() UserRepository {
 	return &userRepo{}
 }
 
-func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, *DBError) {
+func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, error) {
 	query := `
 	INSERT INTO users(first_name, last_name, image, email, phone_number, role)
 	VALUES($1, $2, $3, $4, $5, $6)
@@ -54,7 +54,7 @@ func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, *D
 	return id, nil
 }
 
-func (r *userRepo) Update(ctx *gin.Context, db Querier, u *models.User) *DBError {
+func (r *userRepo) Update(ctx *gin.Context, db Querier, u *models.User) error {
 	query := `
 	UPDATE users
 	SET first_name = $1, last_name = $2, image = $3, role = $4
@@ -72,7 +72,7 @@ func (r *userRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	id int,
-) (*models.User, *DBError) {
+) (*models.User, error) {
 	query := `SELECT id, first_name, last_name, image, email, role, created_at, updated_at, phone_number
 	FROM users 
 	WHERE id = $1
@@ -100,7 +100,7 @@ func (r *userRepo) GetByEmail(
 	ctx *gin.Context,
 	db Querier,
 	email string,
-) (*models.User, *DBError) {
+) (*models.User, error) {
 	query := `SELECT id, first_name, last_name, image, email, role, created_at, updated_at
 	FROM users 
 	WHERE email = $1
@@ -124,7 +124,7 @@ func (r *userRepo) GetByEmail(
 	return &u, nil
 }
 
-func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, *DBError) {
+func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role, error) {
 	query := `SELECT role
 	FROM users
 	WHERE id = $1
@@ -139,7 +139,7 @@ func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role,
 	return role, nil
 }
 
-func (r *userRepo) GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, *DBError) {
+func (r *userRepo) GetIDByEmail(ctx *gin.Context, db Querier, email string) (int, error) {
 	query := `
 	SELECT id
 	FROM users
@@ -155,7 +155,7 @@ func (r *userRepo) GetIDByEmail(ctx *gin.Context, db Querier, email string) (int
 	return id, nil
 }
 
-func (r *userRepo) CheckEmailExistence(ctx *gin.Context, db Querier, email string) *DBError {
+func (r *userRepo) CheckEmailExistence(ctx *gin.Context, db Querier, email string) error {
 	query := `
 		SELECT 1 AS exist FROM users
 		WHERE email = $1

@@ -8,26 +8,26 @@ import (
 type AccountVerificationCodeRepository interface {
 	// Create phone verification code,
 	// columns reqired: otp_code, user_id, expires_at
-	Create(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) *DBError
+	Create(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
 
 	// Update phone verification code,
 	// columns reqired: is_used,
 	// by user_id.
-	Update(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) *DBError
+	Update(ctx *gin.Context, db Querier, a *models.AccountVerificationCode) error
 
 	// Get phone verification code,
 	// by user_id.
-	Get(ctx *gin.Context, db Querier, userID int32) (*models.AccountVerificationCode, *DBError)
+	Get(ctx *gin.Context, db Querier, userID int32) (*models.AccountVerificationCode, error)
 
 	// count how many otp codes does the user have
-	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, *DBError)
+	CountUserOtpCodes(ctx *gin.Context, db Querier, userID int) (int, error)
 
 	// count the number of otp codes a user have in a day
 	CountUserOTPCodesPerDay(
 		ctx *gin.Context,
 		db Querier,
 		userID int32,
-	) (int, *DBError)
+	) (int, error)
 }
 
 type accountVerificationCodeRepo struct{}
@@ -40,7 +40,7 @@ func (r *accountVerificationCodeRepo) Create(
 	ctx *gin.Context,
 	db Querier,
 	p *models.AccountVerificationCode,
-) *DBError {
+) error {
 	query := `
 		INSERT INTO account_verification_codes(otp_code, user_id, expires_at)
 		VALUES ($1, $2, $3);
@@ -57,7 +57,7 @@ func (r *accountVerificationCodeRepo) Update(
 	ctx *gin.Context,
 	db Querier,
 	p *models.AccountVerificationCode,
-) *DBError {
+) error {
 	query := `
 		UPDATE account_verification_codes
 		SET is_used = $2 
@@ -77,7 +77,7 @@ func (r *accountVerificationCodeRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (*models.AccountVerificationCode, *DBError) {
+) (*models.AccountVerificationCode, error) {
 	query := `
 		SELECT id, otp_code, is_used, expires_at, created_at
 		FROM account_verification_codes
@@ -100,7 +100,7 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 	ctx *gin.Context,
 	db Querier,
 	userID int,
-) (int, *DBError) {
+) (int, error) {
 	query := `
 		SELECT COUNT(*)
 		FROM account_verification_codes
@@ -118,7 +118,7 @@ func (r *accountVerificationCodeRepo) CountUserOTPCodesPerDay(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (int, *DBError) {
+) (int, error) {
 	query := `
 	SELECT COUNT(*)
 	FROM account_verification_codes

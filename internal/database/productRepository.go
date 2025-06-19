@@ -14,9 +14,9 @@ type ProductRepository interface {
 		db Querier,
 		filters filters.Filters,
 		prodFilter *filters.ProductFilterOptions,
-	) ([]Product, filters.Metadata, *DBError)
+	) ([]Product, filters.Metadata, error)
 
-	Get(ctx *gin.Context, db Querier, productID int) (*ProductDetails, *DBError)
+	Get(ctx *gin.Context, db Querier, productID int) (*ProductDetails, error)
 }
 
 type productRepo struct{}
@@ -40,7 +40,7 @@ func (p *productRepo) GetAll(
 	db Querier,
 	f filters.Filters,
 	productFilters *filters.ProductFilterOptions,
-) ([]Product, filters.Metadata, *DBError) {
+) ([]Product, filters.Metadata, error) {
 	whereClause, args := productFilters.GetWhereClause()
 	query := fmt.Sprintf(`
 	SELECT 
@@ -111,7 +111,7 @@ func (pr *productRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	productID int,
-) (*ProductDetails, *DBError) {
+) (*ProductDetails, error) {
 	query := `
 		SELECT 
 			p.id,

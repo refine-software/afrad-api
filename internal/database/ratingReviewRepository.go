@@ -12,7 +12,7 @@ type RatingReviewRepository interface {
 		c *gin.Context,
 		db Querier,
 		productID int32,
-	) ([]RatingsAndReviewDetails, *DBError)
+	) ([]RatingsAndReviewDetails, error)
 }
 
 type ratingReviewRepo struct{}
@@ -37,7 +37,7 @@ func (repo *ratingReviewRepo) GetAllOfProduct(
 	c *gin.Context,
 	db Querier,
 	productID int32,
-) ([]RatingsAndReviewDetails, *DBError) {
+) ([]RatingsAndReviewDetails, error) {
 	query := `
 		SELECT 
 			rr.id,

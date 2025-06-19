@@ -23,10 +23,10 @@ func (s *Server) getUser(c *gin.Context) {
 		return
 	}
 
-	user, dbErr := userRepo.Get(c, db, userID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-		utils.Fail(c, apiErr, dbErr)
+	user, err := userRepo.Get(c, db, userID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 

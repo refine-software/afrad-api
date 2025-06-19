@@ -8,16 +8,16 @@ import (
 type PasswordResetRepository interface {
 	// Create password reset,
 	// required columns: otp_code, expires_at, user_id
-	Create(ctx *gin.Context, db Querier, p *models.PasswordReset) *DBError
+	Create(ctx *gin.Context, db Querier, p *models.PasswordReset) error
 
 	// Get password reset by user_id
-	Get(ctx *gin.Context, db Querier, userID int32) (*models.PasswordReset, *DBError)
+	Get(ctx *gin.Context, db Querier, userID int32) (*models.PasswordReset, error)
 
 	// update is_used column to true by user_id
-	Update(ctx *gin.Context, db Querier, userID int32) *DBError
+	Update(ctx *gin.Context, db Querier, userID int32) error
 
 	// count the OTP codes per day
-	CountOTPCodesPerDay(ctx *gin.Context, db Querier, userID int32) (int, *DBError)
+	CountOTPCodesPerDay(ctx *gin.Context, db Querier, userID int32) (int, error)
 }
 
 type passwordResetRepo struct{}
@@ -26,7 +26,7 @@ func NewPasswordResetRepository() PasswordResetRepository {
 	return &passwordResetRepo{}
 }
 
-func (r *passwordResetRepo) Create(ctx *gin.Context, db Querier, p *models.PasswordReset) *DBError {
+func (r *passwordResetRepo) Create(ctx *gin.Context, db Querier, p *models.PasswordReset) error {
 	query := `
 		INSERT INTO password_resets(otp_code, expires_at, user_id)
 		VALUES ($1, $2, $3)
@@ -42,7 +42,7 @@ func (r *passwordResetRepo) Get(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (*models.PasswordReset, *DBError) {
+) (*models.PasswordReset, error) {
 	query := `
 		SELECT otp_code, is_used, expires_at
 		FROM password_resets
@@ -59,7 +59,7 @@ func (r *passwordResetRepo) Get(
 	return &p, nil
 }
 
-func (r *passwordResetRepo) Update(ctx *gin.Context, db Querier, userID int32) *DBError {
+func (r *passwordResetRepo) Update(ctx *gin.Context, db Querier, userID int32) error {
 	query := `
 		UPDATE password_resets
 		SET is_used = true
@@ -79,7 +79,7 @@ func (r *passwordResetRepo) CountOTPCodesPerDay(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
-) (int, *DBError) {
+) (int, error) {
 	query := `
 	SELECT COUNT(*)
 	FROM password_resets

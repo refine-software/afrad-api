@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -74,8 +75,13 @@ var (
 	ErrRoleNotAllowed = NewAPIError(http.StatusForbidden, "role not allowed")
 )
 
-func MapDBErrorToAPIError(err *database.DBError, columnName string) *APIError {
-	switch err.Message {
+func MapDBErrorToAPIError(err error, columnName string) *APIError {
+	var dbErr database.DBError
+	ok := errors.As(err, &dbErr)
+	if !ok {
+		return ErrInternal
+	}
+	switch dbErr.Message {
 	case database.ErrDuplicate:
 		return ErrUniqueViolation(columnName)
 	case database.ErrNotFound:

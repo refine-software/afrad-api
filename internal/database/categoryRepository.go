@@ -8,19 +8,19 @@ import (
 type CategoryRepository interface {
 	// Create new category,
 	// required columns: name, parent_id.
-	Create(ctx *gin.Context, db Querier, category *models.Category) (int32, *DBError)
+	Create(ctx *gin.Context, db Querier, category *models.Category) (int32, error)
 
 	// Get all categories
-	GetAll(ctx *gin.Context, db Querier) (*[]models.Category, *DBError)
+	GetAll(ctx *gin.Context, db Querier) (*[]models.Category, error)
 
 	// Delete category by id.
-	Delete(ctx *gin.Context, db Querier, id int32) *DBError
+	Delete(ctx *gin.Context, db Querier, id int32) error
 
 	// Check if category exists by id.
-	CheckExistence(ctx *gin.Context, db Querier, id int32) *DBError
+	CheckExistence(ctx *gin.Context, db Querier, id int32) error
 
 	// Update category name by id
-	Update(ctx *gin.Context, db Querier, id int32, newName string) *DBError
+	Update(ctx *gin.Context, db Querier, id int32, newName string) error
 }
 
 type categoryRepo struct{}
@@ -33,7 +33,7 @@ func (r *categoryRepo) Create(
 	ctx *gin.Context,
 	db Querier,
 	category *models.Category,
-) (int32, *DBError) {
+) (int32, error) {
 	query := `
 		INSERT INTO categories(name, parent_id)
 		VALUES ($1, $2)
@@ -49,7 +49,7 @@ func (r *categoryRepo) Create(
 	return id, nil
 }
 
-func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category, *DBError) {
+func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category, error) {
 	query := `
 		SELECT id, name, parent_id
 		FROM categories
@@ -81,7 +81,7 @@ func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category,
 	return &categories, nil
 }
 
-func (r *categoryRepo) Delete(ctx *gin.Context, db Querier, id int32) *DBError {
+func (r *categoryRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 	query := `
 		DELETE FROM categories 
 		WHERE id = $1
@@ -93,7 +93,7 @@ func (r *categoryRepo) Delete(ctx *gin.Context, db Querier, id int32) *DBError {
 	return nil
 }
 
-func (r *categoryRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) *DBError {
+func (r *categoryRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) error {
 	query := `
 		SELECT 1 AS exist FROM categories
 		WHERE id = $1
@@ -108,7 +108,7 @@ func (r *categoryRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) *D
 
 func (r *categoryRepo) Update(
 	ctx *gin.Context, db Querier, id int32, newName string,
-) *DBError {
+) error {
 	query := `
 		UPDATE categories
 		SET name = $2

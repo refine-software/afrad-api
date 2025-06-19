@@ -44,11 +44,11 @@ func (s *Server) upsertUser(
 	userRepo := s.db.User()
 	oauthRepo := s.db.Oauth()
 
-	u, dbErr := userRepo.GetByEmail(c, db, user.Email)
-	if dbErr != nil && dbErr.Message != database.ErrNotFound {
+	u, err := userRepo.GetByEmail(c, db, user.Email)
+	if err != nil && database.IsDBNotFoundErr(err) {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(dbErr, "user"),
-			Err:      dbErr,
+			APIError: utils.MapDBErrorToAPIError(err, "user"),
+			Err:      err,
 		}
 	}
 
@@ -59,11 +59,11 @@ func (s *Server) upsertUser(
 		u.Image = pgtype.Text{String: user.AvatarURL, Valid: user.AvatarURL != ""}
 		u.Role = role
 
-		dbErr = userRepo.Update(c, db, u)
-		if dbErr != nil {
+		err = userRepo.Update(c, db, u)
+		if err != nil {
 			return nil, upsertResult{
-				APIError: utils.MapDBErrorToAPIError(dbErr, "user"),
-				Err:      dbErr,
+				APIError: utils.MapDBErrorToAPIError(err, "user"),
+				Err:      err,
 			}
 		}
 		return u, upsertResult{}
@@ -78,21 +78,21 @@ func (s *Server) upsertUser(
 		PhoneNumber: pgtype.Text{},
 		Role:        role,
 	}
-	userID, dbErr := userRepo.Create(c, db, u)
-	if dbErr != nil {
-		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(dbErr, "user"), Err: dbErr}
+	userID, err := userRepo.Create(c, db, u)
+	if err != nil {
+		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(err, "user"), Err: err}
 	}
 	u.ID = int32(userID)
 
-	dbErr = oauthRepo.Create(c, db, &models.OAuth{
+	err = oauthRepo.Create(c, db, &models.OAuth{
 		UserID:     u.ID,
 		Provider:   user.Provider,
 		ProviderID: user.UserID,
 	})
-	if dbErr != nil {
+	if err != nil {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(dbErr, "oauth"),
-			Err:      dbErr,
+			APIError: utils.MapDBErrorToAPIError(err, "oauth"),
+			Err:      err,
 		}
 	}
 
@@ -161,14 +161,14 @@ func (s *Server) googleCallback(c *gin.Context) {
 	}
 
 	var session models.Session
-	session, dbErr := sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
-	if dbErr != nil && dbErr.Message != database.ErrNotFound {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
-		utils.Fail(c, apiErr, dbErr)
+	session, err = sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
+	if err != nil && database.IsDBNotFoundErr(err) {
+		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 	sessExpTime := utils.GetExpTimeAfterDays(s.env.RefreshTokenExpInDays)
-	if dbErr != nil && dbErr.Message == database.ErrNotFound {
+	if err != nil && database.IsDBNotFoundErr(err) {
 		session = models.Session{
 			UserID:       u.ID,
 			RefreshToken: hashedRefresh,
@@ -176,20 +176,20 @@ func (s *Server) googleCallback(c *gin.Context) {
 			UserAgent:    c.Request.UserAgent(),
 		}
 
-		dbErr = sessionRepo.Create(c, db, &session)
-		if dbErr != nil {
-			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
-			utils.Fail(c, apiErr, dbErr)
+		err = sessionRepo.Create(c, db, &session)
+		if err != nil {
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			utils.Fail(c, apiErr, err)
 			return
 		}
 	} else {
 		session.Revoked = false
 		session.RefreshToken = hashedRefresh
 		session.ExpiresAt = sessExpTime
-		dbErr = sessionRepo.Update(c, db, &session)
-		if dbErr != nil {
-			apiErr := utils.MapDBErrorToAPIError(dbErr, "session")
-			utils.Fail(c, apiErr, dbErr)
+		err = sessionRepo.Update(c, db, &session)
+		if err != nil {
+			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			utils.Fail(c, apiErr, err)
 			return
 		}
 	}

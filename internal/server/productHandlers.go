@@ -75,10 +75,10 @@ func (s *Server) getAllProducts(c *gin.Context) {
 
 	db := s.db.Pool()
 	product := s.db.Product()
-	products, metadata, dbErr := product.GetAll(c, db, f, &productsFilterOptions)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "product")
-		utils.Fail(c, apiErr, dbErr)
+	products, metadata, err := product.GetAll(c, db, f, &productsFilterOptions)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "product")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
@@ -113,31 +113,31 @@ func (s *Server) getProduct(c *gin.Context) {
 	ratingsAndReviewsRepo := s.db.RatingReview()
 	imageRepo := s.db.Image()
 
-	p, dbErr := productRepo.Get(c, db, productID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "product")
-		utils.Fail(c, apiErr, dbErr)
+	p, err := productRepo.Get(c, db, productID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "product")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	pvs, dbErr := productVariantRepo.GetAllOfProduct(c, db, p.ID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
-		utils.Fail(c, apiErr, dbErr)
+	pvs, err := productVariantRepo.GetAllOfProduct(c, db, p.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	rrs, dbErr := ratingsAndReviewsRepo.GetAllOfProduct(c, db, p.ID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
-		utils.Fail(c, apiErr, dbErr)
+	rrs, err := ratingsAndReviewsRepo.GetAllOfProduct(c, db, p.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	imgs, dbErr := imageRepo.GetAllOfProduct(c, db, p.ID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "product variant")
-		utils.Fail(c, apiErr, dbErr)
+	imgs, err := imageRepo.GetAllOfProduct(c, db, p.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 

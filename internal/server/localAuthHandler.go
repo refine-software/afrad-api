@@ -88,28 +88,29 @@ func (s *Server) register(ctx *gin.Context) {
 
 	// start a transaction for creating a user
 	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		userID, dbErr := userRepo.Create(ctx, tx, user)
-		if dbErr != nil {
-			return dbErr
+		var userID int
+		userID, err = userRepo.Create(ctx, tx, user)
+		if err != nil {
+			return err
 		}
 
-		dbErr = localAuthRepo.Create(ctx, tx, &models.LocalAuth{
+		err = localAuthRepo.Create(ctx, tx, &models.LocalAuth{
 			UserID:       int32(userID),
 			PasswordHash: passwordHashed,
 		})
-		if dbErr != nil {
-			return dbErr
+		if err != nil {
+			return err
 		}
 
 		// generate OTP
 		otp := utils.GenerateRandomOTP()
-		dbErr = otpCodeRepo.Create(ctx, tx, &models.AccountVerificationCode{
+		err = otpCodeRepo.Create(ctx, tx, &models.AccountVerificationCode{
 			UserID:    int32(userID),
 			OtpCode:   otp,
 			ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
 		})
-		if dbErr != nil {
-			return dbErr
+		if err != nil {
+			return err
 		}
 
 		err = auth.SendOtpEmail(req.Email, otp, s.env)
@@ -120,13 +121,8 @@ func (s *Server) register(ctx *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		var dbErr *database.DBError
-		if errors.As(err, &dbErr) {
-			apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-			utils.Fail(ctx, apiErr, dbErr)
-		} else {
-			utils.Fail(ctx, utils.ErrInternal, err)
-		}
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(ctx, apiErr, err)
 		if imgURL.String != "" {
 			_ = s.s3.DeleteImageByURL(ctx, imgURL.String)
 		}
@@ -166,32 +162,32 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	localAuthRepo := s.db.LocalAuth()
 
 	// check if email exists in the database
-	dbErr := userRepo.CheckEmailExistence(ctx, db, req.Email)
-	if dbErr != nil && dbErr.Message == database.ErrNotFound {
+	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
+	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(
 			ctx,
 			&utils.APIError{
 				Code:    http.StatusBadRequest,
 				Message: "email not found",
 			},
-			dbErr,
+			err,
 		)
 		return
 	}
 
 	// get the user_id by requested email
-	userID, dbErr := userRepo.GetIDByEmail(ctx, db, req.Email)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user_id")
-		utils.Fail(ctx, apiErr, dbErr)
+	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user_id")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
 	// get otp_code and otp Expires_at by user_id
-	otp, dbErr := otpCodeRepo.Get(ctx, db, int32(userID))
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "otp_code")
-		utils.Fail(ctx, apiErr, dbErr)
+	otp, err := otpCodeRepo.Get(ctx, db, int32(userID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "otp_code")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -223,27 +219,22 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 
 	// start a transaction
 	err = s.db.WithTransaction(ctx, func(tx pgx.Tx) error {
-		dbErr := localAuthRepo.UpdateIsAccountVerifiedToTrue(ctx, tx, int32(userID))
-		if dbErr != nil {
-			return dbErr
+		err = localAuthRepo.UpdateIsAccountVerifiedToTrue(ctx, tx, int32(userID))
+		if err != nil {
+			return err
 		}
-		dbErr = otpCodeRepo.Update(ctx, tx, &models.AccountVerificationCode{
+		err = otpCodeRepo.Update(ctx, tx, &models.AccountVerificationCode{
 			UserID: int32(userID),
 			IsUsed: true,
 		})
-		if dbErr != nil {
-			return dbErr
+		if err != nil {
+			return err
 		}
 		return nil
 	})
 	if err != nil {
-		var dbErr *database.DBError
-		if errors.As(err, &dbErr) {
-			apiErr := utils.MapDBErrorToAPIError(dbErr, "user_verification")
-			utils.Fail(ctx, apiErr, dbErr)
-		} else {
-			utils.Fail(ctx, utils.ErrInternal, err)
-		}
+		apiErr := utils.MapDBErrorToAPIError(err, "user_verification")
+		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
@@ -292,17 +283,17 @@ func (s *Server) resendVerification(c *gin.Context) {
 	}()
 
 	// get user
-	user, dbErr := userRepo.GetByEmail(c, db, req.Email)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-		utils.Fail(c, apiErr, dbErr)
+	user, err := userRepo.GetByEmail(c, db, req.Email)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
-	localAuth, dbErr := localAuthRepo.Get(c, db, user.ID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-		utils.Fail(c, apiErr, dbErr)
+	localAuth, err := localAuthRepo.Get(c, db, user.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
@@ -319,10 +310,10 @@ func (s *Server) resendVerification(c *gin.Context) {
 	}
 
 	// limit verification otps to 10 per day
-	numOfOTPs, dbErr := accVerificationRepo.CountUserOTPCodesPerDay(c, db, user.ID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "otp")
-		utils.Fail(c, apiErr, dbErr)
+	numOfOTPs, err := accVerificationRepo.CountUserOTPCodesPerDay(c, db, user.ID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
@@ -347,10 +338,10 @@ func (s *Server) resendVerification(c *gin.Context) {
 		ExpiresAt: utils.GetExpTimeAfterMins(s.env.OTPExpInMin),
 		UserID:    user.ID,
 	}
-	dbErr = accVerificationRepo.Create(c, db, &a)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "otp")
-		utils.Fail(c, apiErr, dbErr)
+	err = accVerificationRepo.Create(c, db, &a)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
@@ -425,12 +416,12 @@ func (s *Server) refreshTokens(c *gin.Context) {
 
 	// Validate the refresh token:
 	// 		- exists in the database
-	session, dbErr := sessionRepo.GetByUserIDAndUserAgent(c, db, req.UserID, userAgent)
-	if dbErr != nil {
+	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, req.UserID, userAgent)
+	if err != nil {
 		utils.Fail(
 			c,
 			&utils.APIError{Code: http.StatusUnauthorized, Message: "Invalid or expired session"},
-			dbErr,
+			err,
 		)
 		return
 	}
@@ -464,10 +455,10 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	}
 
 	// get user Role
-	role, dbErr := userRepo.GetRole(c, db, session.UserID)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-		utils.Fail(c, apiErr, dbErr)
+	role, err := userRepo.GetRole(c, db, session.UserID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
@@ -490,10 +481,10 @@ func (s *Server) refreshTokens(c *gin.Context) {
 
 	session.RefreshToken = hashedRefresh
 	session.ExpiresAt = refreshExpTime
-	dbErr = sessionRepo.Update(c, db, &session)
-	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
-		utils.Fail(c, apiErr, dbErr)
+	err = sessionRepo.Update(c, db, &session)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
 		return
 	}
 
