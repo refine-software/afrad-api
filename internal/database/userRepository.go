@@ -18,6 +18,9 @@ type UserRepository interface {
 	// Get user by id
 	Get(ctx *gin.Context, db Querier, id int) (*models.User, error)
 
+	// Delete user by id
+	Delete(ctx *gin.Context, db Querier, id int) error
+
 	// Get user by email
 	GetByEmail(ctx *gin.Context, db Querier, email string) (*models.User, error)
 
@@ -165,5 +168,19 @@ func (r *userRepo) CheckEmailExistence(ctx *gin.Context, db Querier, email strin
 	if err != nil {
 		return Parse(err, "User", "CheckEmailExistence")
 	}
+	return nil
+}
+
+func (r *userRepo) Delete(ctx *gin.Context, db Querier, id int) error {
+	query := `
+		DELETE FROM users
+		WHERE id = $1
+	`
+
+	_, err := db.Exec(ctx, query, id)
+	if err != nil {
+		return Parse(err, "User", "Delete")
+	}
+
 	return nil
 }
