@@ -10,10 +10,16 @@ import (
 )
 
 func Success(c *gin.Context, data any) {
+	if data == nil {
+		c.Status(http.StatusOK)
+	}
 	c.JSON(http.StatusOK, data)
 }
 
 func Created(c *gin.Context, data any) {
+	if data == nil {
+		c.Status(http.StatusCreated)
+	}
 	c.JSON(http.StatusCreated, data)
 }
 
