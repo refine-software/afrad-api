@@ -45,7 +45,7 @@ func (s *Server) upsertUser(
 	oauthRepo := s.DB.Oauth()
 
 	u, err := userRepo.GetByEmail(c, db, user.Email)
-	if err != nil && database.IsDBNotFoundErr(err) {
+	if err != nil && !database.IsDBNotFoundErr(err) {
 		return nil, upsertResult{
 			APIError: utils.MapDBErrorToAPIError(err, "user"),
 			Err:      err,
@@ -162,7 +162,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 
 	var session models.Session
 	session, err = sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
-	if err != nil && database.IsDBNotFoundErr(err) {
+	if err != nil && !database.IsDBNotFoundErr(err) {
 		apiErr := utils.MapDBErrorToAPIError(err, "session")
 		utils.Fail(c, apiErr, err)
 		return
