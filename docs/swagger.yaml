@@ -49,6 +49,8 @@ definitions:
     properties:
       userId:
         type: integer
+    required:
+    - userId
     type: object
   server.refreshTokenRes:
     properties:

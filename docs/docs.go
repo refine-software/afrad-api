@@ -646,6 +646,9 @@ const docTemplate = `{
         },
         "server.refreshTokenReq": {
             "type": "object",
+            "required": [
+                "userId"
+            ],
             "properties": {
                 "userId": {
                     "type": "integer"

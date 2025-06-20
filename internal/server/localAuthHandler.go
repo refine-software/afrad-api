@@ -370,7 +370,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 }
 
 type refreshTokenReq struct {
-	UserID int32 `json:"userId"`
+	UserID int32 `json:"userId" binding:"required"`
 }
 
 type refreshTokenRes struct {
