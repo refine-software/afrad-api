@@ -41,14 +41,12 @@ func (s *Server) login(ctx *gin.Context) {
 	sessionRepo := s.DB.Session()
 	db := s.DB.Pool()
 
-	fmt.Println("CheckEmailExistence")
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrInvalidCredentials, err)
 		return
 	}
 
-	fmt.Println("GetByEmail")
 	user, err := userRepo.GetByEmail(ctx, db, req.Email)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
@@ -56,7 +54,6 @@ func (s *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println("Get")
 	localAuth, err := localAuthRepo.Get(ctx, db, user.ID)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
@@ -100,7 +97,7 @@ func (s *Server) login(ctx *gin.Context) {
 		user.ID,
 		ctx.Request.UserAgent(),
 	)
-	if err != nil && database.IsDBNotFoundErr(err) {
+	if err != nil && !database.IsDBNotFoundErr(err) {
 		apiErr := utils.MapDBErrorToAPIError(err, "session")
 		utils.Fail(ctx, apiErr, err)
 		return
