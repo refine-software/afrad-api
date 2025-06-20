@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -120,7 +119,29 @@ func (s *Server) updateUser(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("OKAY")
-
 	utils.Success(c, user)
+}
+
+func (s *Server) deleteUser(c *gin.Context) {
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	db := s.DB.Pool()
+	userRepo := s.DB.User()
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	err = userRepo.Delete(c, db, userID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, nil)
 }
