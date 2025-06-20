@@ -5,9 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/refine-software/afrad-api/internal/models"
 )
 
 type RatingReviewRepository interface {
+	// This method will create a Review, with the following data:
+	// rating, review, user_id, product_id.
+	Create(
+		c *gin.Context,
+		db Querier,
+		rr *models.RatingReview,
+	) error
+
 	GetAllOfProduct(
 		c *gin.Context,
 		db Querier,
@@ -19,6 +28,26 @@ type ratingReviewRepo struct{}
 
 func NewRatingReviewRepository() RatingReviewRepository {
 	return &ratingReviewRepo{}
+}
+
+func (repo *ratingReviewRepo) Create(
+	c *gin.Context,
+	db Querier,
+	rr *models.RatingReview,
+) error {
+	query := `
+		INSERT INTO rating_review (rating, review, user_id, product_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, updated_at
+	`
+
+	err := db.QueryRow(c, query, rr.Rating, rr.Review, rr.UserID, rr.ProductID).
+		Scan(&rr.ID, &rr.CreatedAt, &rr.UpdatedAt)
+	if err != nil {
+		return Parse(err, "Rating Review", "Create")
+	}
+
+	return nil
 }
 
 type RatingsAndReviewDetails struct {
