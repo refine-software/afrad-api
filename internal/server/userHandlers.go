@@ -136,11 +136,22 @@ func (s *Server) deleteUser(c *gin.Context) {
 		return
 	}
 
+	u, err := userRepo.Get(c, db, userID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
 	err = userRepo.Delete(c, db, userID)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err, "user")
 		utils.Fail(c, apiErr, err)
 		return
+	}
+
+	if u.Image.Valid {
+		_ = s.S3.DeleteImageByURL(c, u.Image.String)
 	}
 
 	utils.Success(c, nil)
