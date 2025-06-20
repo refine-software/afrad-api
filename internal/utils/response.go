@@ -28,7 +28,7 @@ func NoContent(c *gin.Context) {
 }
 
 func Fail(c *gin.Context, apiErr *APIError, loggedError error) {
-	var dbErr *database.DBError
+	var dbErr database.DBError
 	if errors.As(loggedError, &dbErr) {
 		log.Printf(
 			"Database Error: %s | Repository: %s | Method: %s | Code: %s | Error: %s",
