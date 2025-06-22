@@ -5,14 +5,50 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Add PostgreSQL service
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: testuser
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22.x'
+          go-version: "1.22.x"
+
+      - name: Install PostgreSQL client (for pg_isready)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U testuser; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
 
       - name: Build
         run: go build -v ./...
+
       - name: Test with the Go CLI
-        run: go test ./... 
+        run: go test ./...
+        env:
+          # Set database connection environment variables
+          DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: testuser
+          DB_PASSWORD: postgres
+          DB_NAME: testdb
