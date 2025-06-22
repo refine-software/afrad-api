@@ -49,14 +49,14 @@ func (s *Server) login(ctx *gin.Context) {
 
 	user, err := userRepo.GetByEmail(ctx, db, req.Email)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
 
 	localAuth, err := localAuthRepo.Get(ctx, db, user.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -98,7 +98,7 @@ func (s *Server) login(ctx *gin.Context) {
 		ctx.Request.UserAgent(),
 	)
 	if err != nil && !database.IsDBNotFoundErr(err) {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -114,7 +114,7 @@ func (s *Server) login(ctx *gin.Context) {
 		fmt.Println("Create")
 		err = sessionRepo.Create(ctx, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			apiErr := utils.MapDBErrorToAPIError(err)
 			utils.Fail(ctx, apiErr, err)
 			return
 		}
@@ -125,7 +125,7 @@ func (s *Server) login(ctx *gin.Context) {
 		fmt.Println("Update")
 		err = sessionRepo.Update(ctx, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			apiErr := utils.MapDBErrorToAPIError(err)
 			utils.Fail(ctx, apiErr, err)
 			return
 		}
@@ -181,7 +181,7 @@ func (s *Server) logout(c *gin.Context) {
 
 	session, err := sessionRepo.GetByUserIDAndUserAgent(c, db, int32(userID), userAgent)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -197,7 +197,7 @@ func (s *Server) logout(c *gin.Context) {
 	session.Revoked = true
 	err = sessionRepo.Update(c, db, &session)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -231,7 +231,7 @@ func (s *Server) logoutFromAllSessions(c *gin.Context) {
 
 	err = sessionRepo.RevokeAllOfUser(c, db, int32(userID))
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}

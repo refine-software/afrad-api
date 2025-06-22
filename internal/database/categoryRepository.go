@@ -43,7 +43,11 @@ func (r *categoryRepo) Create(
 	var id int32
 	err := db.QueryRow(ctx, query, category.Name, category.ParentID).Scan(&id)
 	if err != nil {
-		return 0, Parse(err, "Category", "Create")
+		return 0, Parse(err, "Category", "Create", Constraints{
+			UniqueViolationCode:     "name",
+			ForeignKeyViolationCode: "parent",
+			NotNullViolationCode:    "name",
+		})
 	}
 
 	return id, nil
@@ -57,7 +61,7 @@ func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category,
 
 	rows, err := db.Query(ctx, query)
 	if err != nil {
-		return nil, Parse(err, "Category", "GetAll")
+		return nil, Parse(err, "Category", "GetAll", make(Constraints))
 	}
 	defer rows.Close()
 	var categories []models.Category
@@ -69,13 +73,13 @@ func (r *categoryRepo) GetAll(ctx *gin.Context, db Querier) (*[]models.Category,
 			&i.ParentID,
 		)
 		if err != nil {
-			return nil, Parse(err, "Category", "GetAll")
+			return nil, Parse(err, "Category", "GetAll", make(Constraints))
 		}
 		categories = append(categories, i)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, Parse(err, "Category", "GetAll")
+		return nil, Parse(err, "Category", "GetAll", make(Constraints))
 	}
 
 	return &categories, nil
@@ -88,7 +92,9 @@ func (r *categoryRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 	`
 	_, err := db.Exec(ctx, query, id)
 	if err != nil {
-		return Parse(err, "Category", "Delete")
+		return Parse(err, "Category", "Delete", Constraints{
+			ForeignKeyViolationCode: "category", // Could be product or subcategory depending on FK
+		})
 	}
 	return nil
 }
@@ -101,7 +107,7 @@ func (r *categoryRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) er
 	var exist int32
 	err := db.QueryRow(ctx, query, id).Scan(&exist)
 	if err != nil {
-		return Parse(err, "Category", "CheckExistence")
+		return Parse(err, "Category", "CheckExistence", make(Constraints))
 	}
 	return nil
 }
@@ -117,7 +123,10 @@ func (r *categoryRepo) Update(
 
 	_, err := db.Exec(ctx, query, id, newName)
 	if err != nil {
-		return Parse(err, "Category", "Update")
+		return Parse(err, "Category", "Update", Constraints{
+			UniqueViolationCode:  "name",
+			NotNullViolationCode: "name",
+		})
 	}
 	return nil
 }

@@ -32,7 +32,7 @@ func (repo *imageRepo) GetAllOfProduct(
 
 	rows, err := db.Query(c, query, productID)
 	if err != nil {
-		return nil, Parse(err, "Image", "GetAllOfProduct")
+		return nil, Parse(err, "Image", "GetAllOfProduct", make(Constraints))
 	}
 	defer rows.Close()
 
@@ -45,13 +45,13 @@ func (repo *imageRepo) GetAllOfProduct(
 			&img.LowResImage,
 		)
 		if err != nil {
-			return nil, Parse(err, "Image", "GetAllOfProduct")
+			return nil, Parse(err, "Image", "GetAllOfProduct", make(Constraints))
 		}
 		imgs = append(imgs, img)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Parse(err, "Image", "GetAllOfProduct")
+		return nil, Parse(err, "Image", "GetAllOfProduct", make(Constraints))
 	}
 
 	return imgs, nil

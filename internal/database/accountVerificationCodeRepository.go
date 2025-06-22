@@ -47,7 +47,10 @@ func (r *accountVerificationCodeRepo) Create(
 	`
 	_, err := db.Exec(ctx, query, p.OtpCode, p.UserID, p.ExpiresAt)
 	if err != nil {
-		return Parse(err, "Account Verification Code", "Create")
+		return Parse(err, "Account Verification Code", "Create", Constraints{
+			ForeignKeyViolationCode: "user",
+			NotNullViolationCode:    "otp_code",
+		})
 	}
 
 	return nil
@@ -68,7 +71,7 @@ func (r *accountVerificationCodeRepo) Update(
 	`
 	_, err := db.Exec(ctx, query, p.UserID, p.IsUsed)
 	if err != nil {
-		return Parse(err, "Account Verification Code", "Update")
+		return Parse(err, "Account Verification Code", "Update", make(Constraints))
 	}
 	return nil
 }
@@ -90,7 +93,7 @@ func (r *accountVerificationCodeRepo) Get(
 	err := db.QueryRow(ctx, query, userID).
 		Scan(&a.ID, &a.OtpCode, &a.IsUsed, &a.ExpiresAt, &a.CreatedAt)
 	if err != nil {
-		return nil, Parse(err, "Account Verification Code", "Get")
+		return nil, Parse(err, "Account Verification Code", "Get", make(Constraints))
 	}
 
 	return &a, nil
@@ -109,7 +112,7 @@ func (r *accountVerificationCodeRepo) CountUserOtpCodes(
 	var userOtps int
 	err := db.QueryRow(ctx, query, userID).Scan(&userOtps)
 	if err != nil {
-		return 0, Parse(err, "Account Verification Code", "CountUserOtpCodes")
+		return 0, Parse(err, "Account Verification Code", "CountUserOtpCodes", make(Constraints))
 	}
 	return userOtps, nil
 }
@@ -129,7 +132,12 @@ func (r *accountVerificationCodeRepo) CountUserOTPCodesPerDay(
 	var count int
 	err := db.QueryRow(ctx, query, userID).Scan(&count)
 	if err != nil {
-		return 0, Parse(err, "Account Verification Code", "CountUserOTPCodesPerDay")
+		return 0, Parse(
+			err,
+			"Account Verification Code",
+			"CountUserOTPCodesPerDay",
+			make(Constraints),
+		)
 	}
 
 	return count, nil

@@ -127,7 +127,7 @@ func (s *Server) register(ctx *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		if imgURL.String != "" {
 			_ = s.S3.DeleteImageByURL(ctx, imgURL.String)
@@ -184,7 +184,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	// get the user_id by requested email
 	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user_id")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -192,7 +192,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 	// get otp_code and otp Expires_at by user_id
 	otp, err := otpCodeRepo.Get(ctx, db, int32(userID))
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "otp_code")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -239,7 +239,7 @@ func (s *Server) verifyAccount(ctx *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user_verification")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -291,14 +291,14 @@ func (s *Server) resendVerification(c *gin.Context) {
 	// get user
 	user, err := userRepo.GetByEmail(c, db, req.Email)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
 
 	localAuth, err := localAuthRepo.Get(c, db, user.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -318,7 +318,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 	// limit verification otps to 10 per day
 	numOfOTPs, err := accVerificationRepo.CountUserOTPCodesPerDay(c, db, user.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -346,7 +346,7 @@ func (s *Server) resendVerification(c *gin.Context) {
 	}
 	err = accVerificationRepo.Create(c, db, &a)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "otp")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -463,7 +463,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	// get user Role
 	role, err := userRepo.GetRole(c, db, session.UserID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -489,7 +489,7 @@ func (s *Server) refreshTokens(c *gin.Context) {
 	session.ExpiresAt = refreshExpTime
 	err = sessionRepo.Update(c, db, &session)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}

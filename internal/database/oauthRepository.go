@@ -27,7 +27,12 @@ func (a *oAuthRepo) Create(
 
 	_, err := db.Exec(ctx, query, oauth.UserID, oauth.Provider, oauth.ProviderID)
 	if err != nil {
-		return Parse(err, "OAuth", "Create")
+		return Parse(err, "OAuth", "Create", Constraints{
+			UniqueViolationCode:     "provider_id", // unique index on provider_id
+			ForeignKeyViolationCode: "user",        // FK to users
+			NotNullViolationCode:    "provider",
+			UniqueViolationCode:     "user", // primary key on user_id acts like unique constraint
+		})
 	}
 	return nil
 }

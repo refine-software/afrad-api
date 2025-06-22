@@ -64,7 +64,7 @@ func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
 		&s.UserID,
 	)
 
-	return s, Parse(err, "Session", "GetByUserIDAndUserAgent")
+	return s, Parse(err, "Session", "GetByUserIDAndUserAgent", make(Constraints))
 }
 
 func (s *sessionRepo) GetAllOfUser(
@@ -80,7 +80,7 @@ func (s *sessionRepo) GetAllOfUser(
 
 	rows, err := db.Query(ctx, query, userID)
 	if err != nil {
-		return nil, Parse(err, "Session", "GetAllOfUser")
+		return nil, Parse(err, "Session", "GetAllOfUser", make(Constraints))
 	}
 	defer rows.Close()
 
@@ -88,12 +88,12 @@ func (s *sessionRepo) GetAllOfUser(
 	for rows.Next() {
 		var s models.Session
 		if err = rows.Scan(&s.ID, &s.Revoked, &s.UserAgent, &s.RefreshToken, &s.ExpiresAt, &s.CreatedAt, &s.UpdatedAt, &s.UserID); err != nil {
-			return nil, Parse(err, "Session", "GetAllOfUser")
+			return nil, Parse(err, "Session", "GetAllOfUser", make(Constraints))
 		}
 		sessions = append(sessions, s)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, Parse(err, "Session", "GetAllOfUser")
+		return nil, Parse(err, "Session", "GetAllOfUser", make(Constraints))
 	}
 
 	return sessions, nil
@@ -106,7 +106,11 @@ func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session)
 	`
 
 	_, err := db.Exec(ctx, query, sess.UserID, sess.UserAgent, sess.RefreshToken, sess.ExpiresAt)
-	return Parse(err, "Session", "Create")
+	return Parse(err, "Session", "Create", Constraints{
+		UniqueViolationCode:     "user_agent", // because the unique constraint is on (user_id, user_agent)
+		ForeignKeyViolationCode: "user_id",
+		NotNullViolationCode:    "user_id", // or handle multiple fields if you want
+	})
 }
 
 func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) error {
@@ -117,7 +121,9 @@ func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session)
 	`
 
 	_, err := db.Exec(ctx, query, sess.ID, sess.Revoked, sess.RefreshToken, sess.ExpiresAt)
-	return Parse(err, "Session", "Update")
+	return Parse(err, "Session", "Update", Constraints{
+		NotNullViolationCode: "refresh_token",
+	})
 }
 
 func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error {
@@ -129,7 +135,7 @@ func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32
 
 	_, err := db.Exec(ctx, query, userID)
 	if err != nil {
-		return Parse(err, "Session", "RevokeAllOfUser")
+		return Parse(err, "Session", "RevokeAllOfUser", make(Constraints))
 	}
 
 	return nil

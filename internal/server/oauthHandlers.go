@@ -47,7 +47,7 @@ func (s *Server) upsertUser(
 	u, err := userRepo.GetByEmail(c, db, user.Email)
 	if err != nil && !database.IsDBNotFoundErr(err) {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(err, "user"),
+			APIError: utils.MapDBErrorToAPIError(err),
 			Err:      err,
 		}
 	}
@@ -62,7 +62,7 @@ func (s *Server) upsertUser(
 		err = userRepo.Update(c, db, u)
 		if err != nil {
 			return nil, upsertResult{
-				APIError: utils.MapDBErrorToAPIError(err, "user"),
+				APIError: utils.MapDBErrorToAPIError(err),
 				Err:      err,
 			}
 		}
@@ -80,7 +80,7 @@ func (s *Server) upsertUser(
 	}
 	userID, err := userRepo.Create(c, db, u)
 	if err != nil {
-		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(err, "user"), Err: err}
+		return nil, upsertResult{APIError: utils.MapDBErrorToAPIError(err), Err: err}
 	}
 	u.ID = int32(userID)
 
@@ -91,7 +91,7 @@ func (s *Server) upsertUser(
 	})
 	if err != nil {
 		return nil, upsertResult{
-			APIError: utils.MapDBErrorToAPIError(err, "oauth"),
+			APIError: utils.MapDBErrorToAPIError(err),
 			Err:      err,
 		}
 	}
@@ -163,7 +163,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 	var session models.Session
 	session, err = sessionRepo.GetByUserIDAndUserAgent(c, db, u.ID, c.Request.UserAgent())
 	if err != nil && !database.IsDBNotFoundErr(err) {
-		apiErr := utils.MapDBErrorToAPIError(err, "session")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -178,7 +178,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 
 		err = sessionRepo.Create(c, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			apiErr := utils.MapDBErrorToAPIError(err)
 			utils.Fail(c, apiErr, err)
 			return
 		}
@@ -188,7 +188,7 @@ func (s *Server) googleCallback(c *gin.Context) {
 		session.ExpiresAt = sessExpTime
 		err = sessionRepo.Update(c, db, &session)
 		if err != nil {
-			apiErr := utils.MapDBErrorToAPIError(err, "session")
+			apiErr := utils.MapDBErrorToAPIError(err)
 			utils.Fail(c, apiErr, err)
 			return
 		}

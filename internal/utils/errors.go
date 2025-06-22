@@ -75,7 +75,7 @@ var (
 	ErrRoleNotAllowed = NewAPIError(http.StatusForbidden, "role not allowed")
 )
 
-func MapDBErrorToAPIError(err error, columnName string) *APIError {
+func MapDBErrorToAPIError(err error) *APIError {
 	var dbErr database.DBError
 	ok := errors.As(err, &dbErr)
 	if !ok {
@@ -83,21 +83,21 @@ func MapDBErrorToAPIError(err error, columnName string) *APIError {
 	}
 	switch dbErr.Message {
 	case database.ErrDuplicate:
-		return ErrUniqueViolation(columnName)
+		return ErrUniqueViolation(dbErr.Column)
 	case database.ErrNotFound:
 		return ErrNotFound
 	case database.ErrInvalidInput:
 		return ErrBadRequest
 	case database.ErrForeignKey:
-		return ErrForeignKeyViolation(columnName)
+		return ErrForeignKeyViolation(dbErr.Column)
 	case database.ErrStringTooLong:
-		return ErrStringTooLong(columnName)
+		return ErrStringTooLong(dbErr.Column)
 	case database.ErrInvalidFormat:
-		return ErrInvalidFormat(columnName)
+		return ErrInvalidFormat(dbErr.Column)
 	case database.ErrNullViolation:
-		return ErrNullViolation(columnName)
+		return ErrNullViolation(dbErr.Column)
 	case database.ErrCheckViolation:
-		return ErrCheckViolation(columnName)
+		return ErrCheckViolation(dbErr.Column)
 
 	case database.ErrUnknown:
 		return ErrInternal

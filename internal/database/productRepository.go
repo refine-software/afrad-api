@@ -72,7 +72,7 @@ func (p *productRepo) GetAll(
 	fullArgs = append(fullArgs, args...)
 	rows, err := db.Query(ctx, query, fullArgs...)
 	if err != nil {
-		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll", make(Constraints))
 	}
 	defer rows.Close()
 
@@ -83,12 +83,12 @@ func (p *productRepo) GetAll(
 	for rows.Next() {
 		var p Product
 		if err = rows.Scan(&totalRecords, &p.ID, &p.Name, &p.Thumbnail, &p.Brand, &p.Category, &p.Price, &p.Rating); err != nil {
-			return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+			return nil, filters.Metadata{}, Parse(err, "Product", "GetAll", make(Constraints))
 		}
 		products = append(products, p)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll")
+		return nil, filters.Metadata{}, Parse(err, "Product", "GetAll", make(Constraints))
 	}
 
 	metadata := filters.CalculateMetadata(totalRecords, f.Page, f.PageSize)
@@ -132,7 +132,7 @@ func (pr *productRepo) Get(
 	err := db.QueryRow(ctx, query, productID).
 		Scan(&p.ID, &p.Name, &p.Details, &p.Thumbnail, &p.BrandID, &p.Brand, &p.CategoryID, &p.Category)
 	if err != nil {
-		return nil, Parse(err, "Product", "Get")
+		return nil, Parse(err, "Product", "Get", make(Constraints))
 	}
 
 	return &p, nil

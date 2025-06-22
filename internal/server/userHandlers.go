@@ -29,7 +29,7 @@ func (s *Server) getUser(c *gin.Context) {
 
 	user, err := userRepo.Get(c, db, userID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -65,7 +65,7 @@ func (s *Server) updateUser(c *gin.Context) {
 
 	user, dbErr := userRepo.Get(c, db, userID)
 	if dbErr != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
+		apiErr := utils.MapDBErrorToAPIError(dbErr)
 		utils.Fail(c, apiErr, dbErr)
 		return
 	}
@@ -114,7 +114,7 @@ func (s *Server) updateUser(c *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(dbErr, "user")
+		apiErr := utils.MapDBErrorToAPIError(dbErr)
 		utils.Fail(c, apiErr, dbErr)
 		return
 	}
@@ -138,14 +138,14 @@ func (s *Server) deleteUser(c *gin.Context) {
 
 	u, err := userRepo.Get(c, db, userID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
 
 	err = userRepo.Delete(c, db, userID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}

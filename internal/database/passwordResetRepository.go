@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -33,7 +34,10 @@ func (r *passwordResetRepo) Create(ctx *gin.Context, db Querier, p *models.Passw
 	`
 	_, err := db.Exec(ctx, query, p.OtpCode, p.ExpiresAt, p.UserID)
 	if err != nil {
-		return Parse(err, "Password Reset", "Create")
+		return Parse(err, "Password Reset", "Create", Constraints{
+			ForeignKeyViolationCode: "user",
+			NotNullViolationCode:    "otp_code",
+		})
 	}
 	return nil
 }
@@ -53,7 +57,7 @@ func (r *passwordResetRepo) Get(
 	var p models.PasswordReset
 	err := db.QueryRow(ctx, query, userID).Scan(&p.OtpCode, &p.IsUsed, &p.ExpiresAt)
 	if err != nil {
-		return nil, Parse(err, "Password Reset", "Get")
+		return nil, Parse(err, "Password Reset", "Get", make(Constraints))
 	}
 
 	return &p, nil
@@ -68,10 +72,15 @@ func (r *passwordResetRepo) Update(ctx *gin.Context, db Querier, userID int32) e
 			SELECT MAX(id) FROM password_resets
 		)
 	`
-	_, err := db.Exec(ctx, query, userID)
+	result, err := db.Exec(ctx, query, userID)
 	if err != nil {
-		return Parse(err, "Password Reset", "Update")
+		return Parse(err, "Password Reset", "Update", make(Constraints))
 	}
+
+	if rowsAffected := result.RowsAffected(); rowsAffected == 0 {
+		return pgx.ErrNoRows
+	}
+
 	return nil
 }
 
@@ -90,7 +99,7 @@ func (r *passwordResetRepo) CountOTPCodesPerDay(
 	var count int
 	err := db.QueryRow(ctx, query, userID).Scan(&count)
 	if err != nil {
-		return 0, Parse(err, "Password Reset", "CountOTPCodesPerDay")
+		return 0, Parse(err, "Password Reset", "CountOTPCodesPerDay", make(Constraints))
 	}
 
 	return count, nil

@@ -48,7 +48,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	// get the user_id by requested email
 	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "user_id")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -56,7 +56,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	// check if user is verified
 	Verified, err := localAuthRepo.CheckUserVerification(ctx, db, int32(userID))
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "is_verified")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -73,7 +73,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	// count the password reset otp codes
 	countOTPs, err := passwordRestRepo.CountOTPCodesPerDay(ctx, db, int32(userID))
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password_reset")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -91,7 +91,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 		UserID:    int32(userID),
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password_reset")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -139,14 +139,14 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 	// get the user_id by email
 	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
 	if err != nil {
-		utils.MapDBErrorToAPIError(err, "user")
+		utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, utils.ErrInternal, err)
 		return
 	}
 
 	passwordReset, err := passwordRestRepo.Get(ctx, db, int32(userID))
 	if err != nil {
-		utils.MapDBErrorToAPIError(err, "user")
+		utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, utils.ErrInternal, err)
 		return
 	}
@@ -186,7 +186,7 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 		return nil
 	})
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "password")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}

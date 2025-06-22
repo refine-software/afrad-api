@@ -47,7 +47,7 @@ func (s *Server) postReview(c *gin.Context) {
 
 	err = ratingReviewRepo.Create(c, db, &rr)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}

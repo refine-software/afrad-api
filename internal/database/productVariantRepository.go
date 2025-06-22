@@ -42,7 +42,7 @@ func (pvr *productVariantRepo) GetAllOfProduct(
 
 	rows, err := db.Query(c, query, productID)
 	if err != nil {
-		return nil, Parse(err, "Product Variant", "GetAllOfProduct")
+		return nil, Parse(err, "Product Variant", "GetAllOfProduct", make(Constraints))
 	}
 	defer rows.Close()
 
@@ -57,13 +57,13 @@ func (pvr *productVariantRepo) GetAllOfProduct(
 			&pv.Size,
 		)
 		if err != nil {
-			return nil, Parse(err, "Product Variant", "GetAllOfProduct")
+			return nil, Parse(err, "Product Variant", "GetAllOfProduct", make(Constraints))
 		}
 		pvs = append(pvs, pv)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Parse(err, "Product Variant", "GetAllOfProduct")
+		return nil, Parse(err, "Product Variant", "GetAllOfProduct", make(Constraints))
 	}
 
 	return pvs, nil

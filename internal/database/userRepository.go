@@ -51,7 +51,10 @@ func (r *userRepo) Create(ctx *gin.Context, db Querier, u *models.User) (int, er
 	err := db.QueryRow(ctx, query, u.FirstName, u.LastName, u.Image, u.Email, u.PhoneNumber, u.Role).
 		Scan(&id)
 	if err != nil {
-		return 0, Parse(err, "User", "Create")
+		return 0, Parse(err, "User", "Create", Constraints{
+			UniqueViolationCode:  "email", // or "phone_number" if you want to differentiate them by parsing pgErr.Constraint field
+			NotNullViolationCode: "first_name",
+		})
 	}
 
 	return id, nil
@@ -65,7 +68,10 @@ func (r *userRepo) Update(ctx *gin.Context, db Querier, u *models.User) error {
 
 	_, err := db.Exec(ctx, query, u.FirstName, u.LastName, u.Image, u.Role, u.ID)
 	if err != nil {
-		return Parse(err, "User", "Update")
+		return Parse(err, "User", "Update", Constraints{
+			NotNullViolationCode:          "first_name",
+			InvalidTextRepresentationCode: "role",
+		})
 	}
 
 	return nil
@@ -93,7 +99,7 @@ func (r *userRepo) Get(
 		&u.PhoneNumber,
 	)
 	if err != nil {
-		return nil, Parse(err, "User", "Get")
+		return nil, Parse(err, "User", "Get", make(Constraints))
 	}
 
 	return &u, nil
@@ -121,7 +127,7 @@ func (r *userRepo) GetByEmail(
 		&u.UpdatedAt,
 	)
 	if err != nil {
-		return nil, Parse(err, "User", "GetByEmail")
+		return nil, Parse(err, "User", "GetByEmail", make(Constraints))
 	}
 
 	return &u, nil
@@ -136,7 +142,7 @@ func (r *userRepo) GetRole(ctx *gin.Context, db Querier, id int32) (models.Role,
 	var role models.Role
 	err := db.QueryRow(ctx, query, id).Scan(&role)
 	if err != nil {
-		return "", Parse(err, "User", "GetRole")
+		return "", Parse(err, "User", "GetRole", make(Constraints))
 	}
 
 	return role, nil
@@ -152,7 +158,7 @@ func (r *userRepo) GetIDByEmail(ctx *gin.Context, db Querier, email string) (int
 
 	err := db.QueryRow(ctx, query, email).Scan(&id)
 	if err != nil {
-		return 0, Parse(err, "User", "GetIDByEmail")
+		return 0, Parse(err, "User", "GetIDByEmail", make(Constraints))
 	}
 
 	return id, nil
@@ -166,7 +172,7 @@ func (r *userRepo) CheckEmailExistence(ctx *gin.Context, db Querier, email strin
 	var exist int32
 	err := db.QueryRow(ctx, query, email).Scan(&exist)
 	if err != nil {
-		return Parse(err, "User", "CheckEmailExistence")
+		return Parse(err, "User", "CheckEmailExistence", make(Constraints))
 	}
 	return nil
 }
@@ -179,7 +185,9 @@ func (r *userRepo) Delete(ctx *gin.Context, db Querier, id int) error {
 
 	_, err := db.Exec(ctx, query, id)
 	if err != nil {
-		return Parse(err, "User", "Delete")
+		return Parse(err, "User", "Delete", Constraints{
+			ForeignKeyViolationCode: "user_id", // for FK violation in dependent tables
+		})
 	}
 
 	return nil

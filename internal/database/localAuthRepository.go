@@ -49,7 +49,7 @@ func (r *localAuthRepo) Get(
 	var l models.LocalAuth
 	err := db.QueryRow(ctx, query, userID).Scan(&l.UserID, &l.IsAccountVerified, &l.PasswordHash)
 	if err != nil {
-		return nil, Parse(err, "Local Auth", "Get")
+		return nil, Parse(err, "Local Auth", "Get", make(Constraints))
 	}
 
 	return &l, nil
@@ -62,7 +62,11 @@ func (r *localAuthRepo) Create(ctx *gin.Context, db Querier, l *models.LocalAuth
 	`
 	_, err := db.Exec(ctx, query, l.UserID, l.PasswordHash)
 	if err != nil {
-		return Parse(err, "Local Auth", "Create")
+		return Parse(err, "Local Auth", "Create", Constraints{
+			UniqueViolationCode:     "user", // for primary key user_id
+			ForeignKeyViolationCode: "user", // FK to users
+			NotNullViolationCode:    "password_hash",
+		})
 	}
 	return nil
 }
@@ -75,7 +79,9 @@ func (r *localAuthRepo) Update(ctx *gin.Context, db Querier, l *models.LocalAuth
 	`
 	_, err := db.Exec(ctx, query, l.UserID, l.IsAccountVerified, l.PasswordHash)
 	if err != nil {
-		return Parse(err, "Local Auth", "Update")
+		return Parse(err, "Local Auth", "Update", Constraints{
+			NotNullViolationCode: "password_hash",
+		})
 	}
 	return nil
 }
@@ -92,7 +98,7 @@ func (r *localAuthRepo) UpdateIsAccountVerifiedToTrue(
 	`
 	_, err := db.Exec(ctx, query, userID)
 	if err != nil {
-		return Parse(err, "Local Auth", "UpdateIsAccountVerifiedToTrue")
+		return Parse(err, "Local Auth", "UpdateIsAccountVerifiedToTrue", make(Constraints))
 	}
 	return nil
 }
@@ -112,7 +118,7 @@ func (r *localAuthRepo) CheckUserVerification(
 	err := db.QueryRow(ctx, query, userID).
 		Scan(&isVerified)
 	if err != nil {
-		return false, Parse(err, "Local Auth", "CheckUserVerification")
+		return false, Parse(err, "Local Auth", "CheckUserVerification", make(Constraints))
 	}
 
 	return isVerified, nil

@@ -38,7 +38,7 @@ func (s *Server) createCategory(ctx *gin.Context) {
 
 	_, err = categoryRepo.Create(ctx, db, c)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -55,7 +55,7 @@ func (s *Server) getCategories(ctx *gin.Context) {
 
 	categories, err := categoryRepo.GetAll(ctx, db)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "categories")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -100,7 +100,7 @@ func (s *Server) deleteCategory(ctx *gin.Context) {
 	}
 
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
@@ -144,7 +144,7 @@ func (s *Server) updateCategory(ctx *gin.Context) {
 
 	err = categoryRepo.Update(ctx, db, int32(id), req.Name)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "category")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
 		return
 	}

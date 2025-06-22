@@ -74,7 +74,7 @@ func (s *Server) getAllProducts(c *gin.Context) {
 	product := s.DB.Product()
 	products, metadata, err := product.GetAll(c, db, f, &productsFilterOptions)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
@@ -112,28 +112,28 @@ func (s *Server) getProduct(c *gin.Context) {
 
 	p, err := productRepo.Get(c, db, productID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
 
 	pvs, err := productVariantRepo.GetAllOfProduct(c, db, p.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
 
 	rrs, err := ratingsAndReviewsRepo.GetAllOfProduct(c, db, p.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}
 
 	imgs, err := imageRepo.GetAllOfProduct(c, db, p.ID)
 	if err != nil {
-		apiErr := utils.MapDBErrorToAPIError(err, "product variant")
+		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
 		return
 	}

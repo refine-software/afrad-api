@@ -44,7 +44,10 @@ func (repo *ratingReviewRepo) Create(
 	err := db.QueryRow(c, query, rr.Rating, rr.Review, rr.UserID, rr.ProductID).
 		Scan(&rr.ID, &rr.CreatedAt, &rr.UpdatedAt)
 	if err != nil {
-		return Parse(err, "Rating Review", "Create")
+		return Parse(err, "Rating Review", "Create", map[string]string{
+			UniqueViolationCode:     "review",
+			ForeignKeyViolationCode: "product",
+		})
 	}
 
 	return nil
@@ -86,7 +89,7 @@ func (repo *ratingReviewRepo) GetAllOfProduct(
 
 	rows, err := db.Query(c, query, productID)
 	if err != nil {
-		return nil, Parse(err, "Rating Review", "GetAllOfProduct")
+		return nil, Parse(err, "Rating Review", "GetAllOfProduct", make(Constraints))
 	}
 	defer rows.Close()
 
@@ -105,13 +108,13 @@ func (repo *ratingReviewRepo) GetAllOfProduct(
 			&rr.UserID,
 		)
 		if err != nil {
-			return nil, Parse(err, "Rating Review", "GetAllOfProduct")
+			return nil, Parse(err, "Rating Review", "GetAllOfProduct", make(Constraints))
 		}
 		rrs = append(rrs, rr)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, Parse(err, "Rating Review", "GetAllOfProduct")
+		return nil, Parse(err, "Rating Review", "GetAllOfProduct", make(Constraints))
 	}
 
 	return rrs, nil
