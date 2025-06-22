@@ -122,7 +122,7 @@ func TestRegisterUser(t *testing.T) {
 				"password":  "supersecure123",
 			},
 			wantStatus: http.StatusConflict,
-			wantBody:   "user already exists",
+			wantBody:   "email already exists",
 		},
 	}
 
