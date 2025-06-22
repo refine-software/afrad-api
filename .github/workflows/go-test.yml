@@ -10,7 +10,7 @@ jobs:
             postgres:
                 image: postgres:15
                 env:
-                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_PASSWORD: testpass
                     POSTGRES_USER: testuser
                     POSTGRES_DB: testdb
                 options: >-
@@ -19,7 +19,8 @@ jobs:
                     --health-timeout 5s
                     --health-retries 5
                 ports:
-                    - 5432:5432
+                    - 5433:5432
+                    - 5433:5432
 
         steps:
             - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
 
             - name: Wait for PostgreSQL
               run: |
-                  until pg_isready -h localhost -p 5432 -U testuser; do
+                  until pg_isready -h localhost -p 5433 -U testuser; do
                     echo "Waiting for PostgreSQL..."
                     sleep 2
                   done
@@ -62,12 +63,20 @@ jobs:
             - name: Test with the Go CLI
               run: go test ./...
               env:
-                  # Set database connection environment variables for your config.NewTestEnv()
-                  DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+                  # Set database connection environment variables to match docker-compose.test.yml
+                  DATABASE_URL: "postgres://testuser:testpass@localhost:5433/testdb?sslmode=disable"
+                  DB_URL: "postgres://testuser:testpass@localhost:5433/testdb?sslmode=disable"
+                  TEST_DATABASE_URL: "postgres://testuser:testpass@localhost:5433/testdb?sslmode=disable"
+                  TEST_DB_URL: "postgres://testuser:testpass@localhost:5433/testdb?sslmode=disable"
+                  # Individual environment variables
                   DB_HOST: localhost
-                  DB_PORT: 5432
+                  DB_PORT: 5433
                   DB_USER: testuser
-                  DB_PASSWORD: postgres
+                  DB_PASSWORD: testpass
                   DB_NAME: testdb
-                  # Add any other environment variables your config.NewTestEnv() might need
-                  TEST_DB_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+                  # Test-specific variables
+                  TEST_DB_HOST: localhost
+                  TEST_DB_PORT: 5433
+                  TEST_DB_USER: testuser
+                  TEST_DB_PASSWORD: testpass
+                  TEST_DB_NAME: testdb
