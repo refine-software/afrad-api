@@ -42,13 +42,28 @@ jobs:
       - name: Build
         run: go build -v ./...
 
-      - name: Test with the Go CLI
-        run: go test ./...
+      - name: Verify migrations directory
+        run: |
+          echo "Checking for migrations directory..."
+          ls -la database/ || echo "database/ directory not found"
+          ls -la database/migrations/ || echo "database/migrations/ directory not found"
         env:
-          # Set database connection environment variables
           DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: testuser
           DB_PASSWORD: postgres
           DB_NAME: testdb
+
+      - name: Test with the Go CLI
+        run: go test ./...
+        env:
+          # Set database connection environment variables for your config.NewTestEnv()
+          DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: testuser
+          DB_PASSWORD: postgres
+          DB_NAME: testdb
+          # Add any other environment variables your config.NewTestEnv() might need
+          TEST_DB_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
