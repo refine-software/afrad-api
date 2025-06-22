@@ -31,7 +31,7 @@ type ProductVariant struct {
 type Category struct {
 	ID       int32       `json:"id"`
 	Name     string      `json:"name"`
-	ParentID pgtype.Int4 `json:"-"`
+	ParentID pgtype.Int4 `json:"parentId"`
 }
 
 type RatingReview struct {

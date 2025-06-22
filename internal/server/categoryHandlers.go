@@ -13,7 +13,7 @@ import (
 
 type categoryRequest struct {
 	Name     string `json:"name"     binding:"required"`
-	ParentID *int32 `json:"parentID"`
+	ParentID int32  `json:"parentId"`
 }
 
 func (s *Server) createCategory(ctx *gin.Context) {
@@ -27,10 +27,7 @@ func (s *Server) createCategory(ctx *gin.Context) {
 	categoryRepo := s.DB.Category()
 	db := s.DB.Pool()
 
-	parentID := pgtype.Int4{Valid: false}
-	if req.ParentID != nil {
-		parentID = pgtype.Int4{Int32: *req.ParentID, Valid: true}
-	}
+	parentID := pgtype.Int4{Int32: req.ParentID, Valid: req.ParentID != 0}
 	c := &models.Category{
 		Name:     req.Name,
 		ParentID: parentID,
