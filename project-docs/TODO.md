@@ -33,6 +33,6 @@
 - [x] Scan files sent, they have to be images and have to be under a certain size.
 - [x] S3 images aren't accessible in the browser, check bucket permissions.
 - [x] DBErrors needs to containe the database error itself too, so we can show it to the programmer.
-- [ ] The database errors when being mapped are getting a column name, which is a bad why of determining which column is causing the issue, find a better way.
+- [x] The database errors when being mapped are getting a column name, which is a bad why of determining which column is causing the issue, find a better way.
       To reproduce the bad behavior, try to submit a review then submit the review again on the same product, you'll get a conflict,
       Then try to post a review on a non existing product and see the returned message, compare the messages from these 2 cases and you'll see the problem.
