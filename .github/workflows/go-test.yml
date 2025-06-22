@@ -2,68 +2,72 @@ name: Go-test
 on: [push, pull_request]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    # Add PostgreSQL service
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: testuser
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+        # Add PostgreSQL service
+        services:
+            postgres:
+                image: postgres:15
+                env:
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_USER: testuser
+                    POSTGRES_DB: testdb
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.22.x"
+            - name: Setup Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: "1.22.x"
 
-      - name: Install PostgreSQL client (for pg_isready)
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+            - name: Install PostgreSQL client (for pg_isready)
+              run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-      - name: Wait for PostgreSQL
-        run: |
-          until pg_isready -h localhost -p 5432 -U testuser; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
+            - name: Wait for PostgreSQL
+              run: |
+                  until pg_isready -h localhost -p 5432 -U testuser; do
+                    echo "Waiting for PostgreSQL..."
+                    sleep 2
+                  done
 
-      - name: Build
-        run: go build -v ./...
+            - name: Build
+              run: go build -v ./...
 
-      - name: Verify migrations directory
-        run: |
-          echo "Checking for migrations directory..."
-          ls -la database/ || echo "database/ directory not found"
-          ls -la database/migrations/ || echo "database/migrations/ directory not found"
-        env:
-          DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: testuser
-          DB_PASSWORD: postgres
-          DB_NAME: testdb
+            - name: Find migrations directory
+              run: |
+                  echo "Project structure:"
+                  ls -la
+                  echo "Looking for migration files..."
+                  find . -name "*migration*" -type d 2>/dev/null || echo "No migration directories found"
+                  find . -name "*.sql" | head -10 || echo "No SQL files found"
+                  echo "Looking for database-related directories..."
+                  find . -type d -name "*database*" 2>/dev/null || echo "No database directories found"
+              env:
+                  DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: testuser
+                  DB_PASSWORD: postgres
+                  DB_NAME: testdb
 
-      - name: Test with the Go CLI
-        run: go test ./...
-        env:
-          # Set database connection environment variables for your config.NewTestEnv()
-          DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_USER: testuser
-          DB_PASSWORD: postgres
-          DB_NAME: testdb
-          # Add any other environment variables your config.NewTestEnv() might need
-          TEST_DB_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+            - name: Test with the Go CLI
+              run: go test ./...
+              env:
+                  # Set database connection environment variables for your config.NewTestEnv()
+                  DATABASE_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USER: testuser
+                  DB_PASSWORD: postgres
+                  DB_NAME: testdb
+                  # Add any other environment variables your config.NewTestEnv() might need
+                  TEST_DB_URL: "postgres://testuser:postgres@localhost:5432/testdb?sslmode=disable"
