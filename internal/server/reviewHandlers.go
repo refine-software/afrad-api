@@ -57,12 +57,15 @@ func (s *Server) postReview(c *gin.Context) {
 }
 
 type updateReviewReq struct {
-	ReviewID int    `json:"reviewId" binding:"required"`
-	Rating   int    `json:"rating"`
-	Review   string `json:"review"`
+	Rating int    `json:"rating"`
+	Review string `json:"review"`
 }
 
 func (s *Server) updateReview(c *gin.Context) {
+	reviewID := convStrToInt(c, c.Param("id"), "id")
+	if reviewID == 0 {
+		return
+	}
 	var req updateReviewReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
@@ -84,7 +87,7 @@ func (s *Server) updateReview(c *gin.Context) {
 	db := s.DB.Pool()
 	reviewRepo := s.DB.RatingReview()
 
-	rr, err := reviewRepo.Get(c, db, int32(req.ReviewID))
+	rr, err := reviewRepo.Get(c, db, int32(reviewID))
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
@@ -111,4 +114,46 @@ func (s *Server) updateReview(c *gin.Context) {
 	}
 
 	utils.Success(c, rr)
+}
+
+func (s *Server) deleteReview(c *gin.Context) {
+	reviewID := convStrToInt(c, c.Param("id"), "id")
+	if reviewID == 0 {
+		return
+	}
+
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	db := s.DB.Pool()
+	reviewRepo := s.DB.RatingReview()
+
+	rr, err := reviewRepo.Get(c, db, int32(reviewID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	if rr.UserID != int32(userID) {
+		utils.Fail(c, utils.ErrForbidden, err)
+		return
+	}
+
+	err = reviewRepo.Delete(c, db, int32(reviewID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, "review deleted successfully")
 }
