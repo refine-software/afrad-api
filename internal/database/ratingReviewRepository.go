@@ -29,6 +29,10 @@ type RatingReviewRepository interface {
 	// Required columns: rating, review.
 	// By: id.
 	Update(c *gin.Context, db Querier, rr *models.RatingReview) error
+
+	// This method will delete a review from the database
+	// by the review id.
+	Delete(c *gin.Context, db Querier, reviewID int32) error
 }
 
 type ratingReviewRepo struct{}
@@ -163,6 +167,20 @@ func (repo *ratingReviewRepo) Update(c *gin.Context, db Querier, rr *models.Rati
 			CheckViolationCode:            "rating",
 			StringDataRightTruncationCode: "review",
 		})
+	}
+
+	return nil
+}
+
+func (repo *ratingReviewRepo) Delete(c *gin.Context, db Querier, reviewID int32) error {
+	query := `
+		DELETE FROM rating_review
+		WHERE id = $1
+	`
+
+	_, err := db.Exec(c, query, reviewID)
+	if err != nil {
+		return Parse(err, "Rating Review", "Delete", make(Constraints))
 	}
 
 	return nil
