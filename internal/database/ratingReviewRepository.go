@@ -17,11 +17,18 @@ type RatingReviewRepository interface {
 		rr *models.RatingReview,
 	) error
 
+	Get(c *gin.Context, db Querier, reviewID int32) (*models.RatingReview, error)
+
 	GetAllOfProduct(
 		c *gin.Context,
 		db Querier,
 		productID int32,
 	) ([]RatingsAndReviewDetails, error)
+
+	// This method updates the RatingReview model,
+	// Required columns: rating, review.
+	// By: id.
+	Update(c *gin.Context, db Querier, rr *models.RatingReview) error
 }
 
 type ratingReviewRepo struct{}
@@ -51,6 +58,27 @@ func (repo *ratingReviewRepo) Create(
 	}
 
 	return nil
+}
+
+func (repo *ratingReviewRepo) Get(
+	c *gin.Context,
+	db Querier,
+	reviewID int32,
+) (*models.RatingReview, error) {
+	query := `
+		SELECT id, rating, review, created_at, updated_at, user_id, product_id
+		FROM rating_review
+		WHERE id = $1
+	`
+
+	var rr models.RatingReview
+	err := db.QueryRow(c, query, reviewID).
+		Scan(&rr.ID, &rr.Rating, &rr.Review, &rr.CreatedAt, &rr.UpdatedAt, &rr.UserID, &rr.ProductID)
+	if err != nil {
+		return nil, Parse(err, "Rating Review", "Get", make(Constraints))
+	}
+
+	return &rr, nil
 }
 
 type RatingsAndReviewDetails struct {
@@ -118,4 +146,24 @@ func (repo *ratingReviewRepo) GetAllOfProduct(
 	}
 
 	return rrs, nil
+}
+
+func (repo *ratingReviewRepo) Update(c *gin.Context, db Querier, rr *models.RatingReview) error {
+	query := `
+		UPDATE rating_review
+		SET rating = $2, review = $3
+		WHERE id = $1
+		RETURNING updated_at
+	`
+
+	err := db.QueryRow(c, query, rr.ID, rr.Rating, rr.Review).Scan(&rr.UpdatedAt)
+	if err != nil {
+		return Parse(err, "Rating Review", "Update", Constraints{
+			NotNullViolationCode:          "rating",
+			CheckViolationCode:            "rating",
+			StringDataRightTruncationCode: "review",
+		})
+	}
+
+	return nil
 }
