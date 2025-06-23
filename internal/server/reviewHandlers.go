@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +47,63 @@ func (s *Server) postReview(c *gin.Context) {
 	}
 
 	err = ratingReviewRepo.Create(c, db, &rr)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, rr)
+}
+
+type updateReviewReq struct {
+	ReviewID int    `json:"reviewId" binding:"required"`
+	Rating   int    `json:"rating"`
+	Review   string `json:"review"`
+}
+
+func (s *Server) updateReview(c *gin.Context) {
+	var req updateReviewReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		utils.Fail(c, utils.ErrBadRequest, err)
+		return
+	}
+
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	db := s.DB.Pool()
+	reviewRepo := s.DB.RatingReview()
+
+	rr, err := reviewRepo.Get(c, db, int32(req.ReviewID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	if userID != int(rr.UserID) {
+		utils.Fail(c, utils.ErrForbidden, errors.New("a user trying to update other user review"))
+		return
+	}
+
+	if req.Rating != 0 {
+		rr.Rating = int32(req.Rating)
+	}
+
+	rr.Review.String = req.Review
+	rr.Review.Valid = req.Review != ""
+
+	err = reviewRepo.Update(c, db, rr)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)

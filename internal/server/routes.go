@@ -64,7 +64,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 		user.PUT("", s.updateUser)
 		user.DELETE("", s.deleteUser)
 		user.POST("/review", s.postReview)
-		user.PUT("/review")
+		user.PUT("/review", s.updateReview)
 		user.GET("/review")
 		user.PATCH("/user/notificatoin-preferences")
 		user.POST("/logout", s.logout)
