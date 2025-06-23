@@ -27,17 +27,19 @@
 
 ## User
 
-| DONE | Method   | Endpoint                         | Description                      |
-| ---- | -------- | -------------------------------- | -------------------------------- |
-| ❌   | `GET`    | `/user`                          | Get user data                    |
-| ❌   | `PUT`    | `/user`                          | Update user data                 |
-| ❌   | `DELETE` | `/user`                          | Delete self                      |
-| ❌   | `POST`   | `/user/review`                   | Review a product                 |
-| ❌   | `PUT`    | `/user/review`                   | Change review                    |
-| ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews                |
-| ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preferences |
-| ✅   | `POST`   | `/user/logout`                   | Revoke the current session       |
-| ✅   | `POST`   | `/user/logout/all`               | Revoke all sessions              |
+| DONE | Method   | Endpoint                         | Description                         |
+| ---- | -------- | -------------------------------- | ----------------------------------- |
+| ✅   | `GET`    | `/user`                          | Get user data                       |
+| ✅   | `PUT`    | `/user`                          | Update user data                    |
+| ✅   | `DELETE` | `/user`                          | Delete self                         |
+| ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews of a user         |
+| ✅   | `POST`   | `/user/reviews`                  | Review a product                    |
+| ✅   | `PUT`    | `/user/reviews/:id`              | Update review                       |
+| ✅   | `DELETE` | `/user/reviews/:id`              | Delete review                       |
+| ❌   | `PATCH`  | `/user/notificatoin-preferences` | Change notifications preference     |
+| ❌   | `GET`    | `/user/notificatoin-preferences` | Fetch user notifications preference |
+| ✅   | `POST`   | `/user/logout`                   | Revoke the current session          |
+| ✅   | `POST`   | `/user/logout/all`               | Revoke all sessions                 |
 
 ## Product
 
