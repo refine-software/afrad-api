@@ -11,6 +11,31 @@ import (
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
+func (s *Server) getUserReviews(c *gin.Context) {
+	claims := auth.GetAccessClaims(c)
+	if claims == nil {
+		return
+	}
+
+	userID, err := strconv.Atoi(claims.Subject)
+	if err != nil {
+		utils.Fail(c, utils.ErrInternal, err)
+		return
+	}
+
+	db := s.DB.Pool()
+	reviewRepo := s.DB.RatingReview()
+
+	rrs, err := reviewRepo.GetAllOfUser(c, db, int32(userID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, rrs)
+}
+
 type ReviewReq struct {
 	Rating    int    `json:"rating"    binding:"required"`
 	Review    string `json:"review"`
