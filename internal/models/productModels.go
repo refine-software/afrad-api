@@ -40,8 +40,8 @@ type RatingReview struct {
 	Review    pgtype.Text `json:"review"`
 	CreatedAt time.Time   `json:"createdAt"`
 	UpdatedAt time.Time   `json:"updatedAt"`
-	UserID    int32       `json:"-"`
-	ProductID int32       `json:"-"`
+	UserID    int32       `json:"userId"`
+	ProductID int32       `json:"productId"`
 }
 
 type Image struct {
