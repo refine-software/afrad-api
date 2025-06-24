@@ -109,6 +109,24 @@
 | ---- | ------ | -------- | ----------- |
 | ❌   | `POST` | `/`      |             |
 
+## Colors
+
+| DONE | Method   | Endpoint     | Description       |
+| ---- | -------- | ------------ | ----------------- |
+| ✅   | `GET`    | `/colors`    | Get all colors    |
+| ✅   | `POST`   | `/color`     | Create color      |
+| ✅   | `PUT`    | `/color/:id` | Update color name |
+| ✅   | `DELETE` | `/color/:id` | Delete color      |
+
+## Sizes
+
+| DONE | Method   | Endpoint    | Description      |
+| ---- | -------- | ----------- | ---------------- |
+| ❌   | `GET`    | `/sizes`    | Get all sizes    |
+| ❌   | `POST`   | `/size`     | Create size      |
+| ❌   | `PUT`    | `/size/:id` | Update size name |
+| ❌   | `DELETE` | `/size/:id` | Delete size      |
+
 ---
 
 # INFO
