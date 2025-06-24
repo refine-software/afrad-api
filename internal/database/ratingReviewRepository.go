@@ -25,6 +25,8 @@ type RatingReviewRepository interface {
 		productID int32,
 	) ([]RatingsAndReviewDetails, error)
 
+	GetAllOfUser(c *gin.Context, db Querier, userID int32) ([]models.RatingReview, error)
+
 	// This method updates the RatingReview model,
 	// Required columns: rating, review.
 	// By: id.
@@ -147,6 +149,45 @@ func (repo *ratingReviewRepo) GetAllOfProduct(
 
 	if err = rows.Err(); err != nil {
 		return nil, Parse(err, "Rating Review", "GetAllOfProduct", make(Constraints))
+	}
+
+	return rrs, nil
+}
+
+func (repo *ratingReviewRepo) GetAllOfUser(
+	c *gin.Context,
+	db Querier,
+	userID int32,
+) ([]models.RatingReview, error) {
+	query := `
+		SELECT id, rating, review, created_at, updated_at, user_id, product_id
+		FROM rating_review
+		WHERE user_id = $1
+	`
+
+	var rrs []models.RatingReview
+
+	rows, err := db.Query(c, query, userID)
+	if err != nil {
+		return nil, Parse(err, "Rating Review", "GetAllOfUser", make(Constraints))
+	}
+
+	for rows.Next() {
+		var rr models.RatingReview
+		rows.Scan(
+			&rr.ID,
+			&rr.Rating,
+			&rr.Review,
+			&rr.CreatedAt,
+			&rr.UpdatedAt,
+			&rr.UserID,
+			&rr.ProductID,
+		)
+		if err != nil {
+			return nil, Parse(err, "Rating Review", "GetAllOfUser", make(Constraints))
+		}
+
+		rrs = append(rrs, rr)
 	}
 
 	return rrs, nil
