@@ -32,7 +32,7 @@
 | ✅   | `GET`    | `/user`                          | Get user data                       |
 | ✅   | `PUT`    | `/user`                          | Update user data                    |
 | ✅   | `DELETE` | `/user`                          | Delete self                         |
-| ❌   | `GET`    | `/user/reviews`                  | Fetch all reviews of a user         |
+| ✅   | `GET`    | `/user/reviews`                  | Fetch all reviews of a user         |
 | ✅   | `POST`   | `/user/reviews`                  | Review a product                    |
 | ✅   | `PUT`    | `/user/reviews/:id`              | Update review                       |
 | ✅   | `DELETE` | `/user/reviews/:id`              | Delete review                       |
