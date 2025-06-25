@@ -83,9 +83,9 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 
 	wishlist := protected.Group("/wishlist")
 	{
-		wishlist.GET("")
-		wishlist.POST("/:id")
-		wishlist.DELETE("/:id")
+		wishlist.GET("", s.getWishlist)
+		wishlist.POST("/:product_id", s.addToWishlist)
+		wishlist.DELETE("/:id", s.deleteFromWishlist)
 	}
 
 	orders := protected.Group("/orders")
