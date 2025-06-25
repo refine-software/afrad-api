@@ -122,10 +122,10 @@
 
 | DONE | Method   | Endpoint    | Description      |
 | ---- | -------- | ----------- | ---------------- |
-| ❌   | `GET`    | `/sizes`    | Get all sizes    |
-| ❌   | `POST`   | `/size`     | Create size      |
-| ❌   | `PUT`    | `/size/:id` | Update size name |
-| ❌   | `DELETE` | `/size/:id` | Delete size      |
+| ✅   | `GET`    | `/sizes`    | Get all sizes    |
+| ✅   | `POST`   | `/size`     | Create size      |
+| ✅   | `PUT`    | `/size/:id` | Update size name |
+| ✅   | `DELETE` | `/size/:id` | Delete size      |
 
 ---
 
