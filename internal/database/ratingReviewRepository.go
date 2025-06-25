@@ -171,10 +171,11 @@ func (repo *ratingReviewRepo) GetAllOfUser(
 	if err != nil {
 		return nil, Parse(err, "Rating Review", "GetAllOfUser", make(Constraints))
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var rr models.RatingReview
-		rows.Scan(
+		err = rows.Scan(
 			&rr.ID,
 			&rr.Rating,
 			&rr.Review,
