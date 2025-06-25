@@ -29,6 +29,7 @@ type Service interface {
 	Oauth() OAuthRepository
 	User() UserRepository
 	Session() SessionRepository
+	Wishlist() WishlistRepository
 	Pool() *pgxpool.Pool
 	// Make sure to use this method when all errors being returned are db errors.
 	// you can use it when other errors are being returned but still.
@@ -58,6 +59,7 @@ type service struct {
 	localAuthRepo               LocalAuthRepository
 	oAuthRepo                   OAuthRepository
 	userRepo                    UserRepository
+	wishlistRepo                WishlistRepository
 	db                          *pgxpool.Pool
 }
 
@@ -97,6 +99,7 @@ func New(env *config.Env) Service {
 		productVariantRepo:          NewProductVariantRepository(),
 		ratingReviewRepo:            NewRatingReviewRepository(),
 		sizeRepo:                    NewSizeRepository(),
+		wishlistRepo:                NewWishlistRepository(),
 	}
 
 	return dbInstance
@@ -156,6 +159,10 @@ func (s *service) RatingReview() RatingReviewRepository {
 
 func (s *service) Size() SizeRepository {
 	return s.sizeRepo
+}
+
+func (s *service) Wishlist() WishlistRepository {
+	return s.wishlistRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
