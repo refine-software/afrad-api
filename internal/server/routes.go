@@ -127,6 +127,22 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 	{
 		orders.GET("")
 	}
+
+	size := admin.Group("/sizes")
+	{
+		size.POST("", s.createSize)
+		size.GET("", s.GetSizes)
+		size.PUT("/:id", s.updateSize)
+		size.DELETE("/:id", s.deleteSize)
+	}
+
+	color := admin.Group("/colors")
+	{
+		color.POST("")
+		color.GET("")
+		color.PUT("/:id")
+		color.DELETE("/:id")
+	}
 }
 
 func (s *Server) websocketHandler(c *gin.Context) {

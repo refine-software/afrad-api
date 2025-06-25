@@ -69,7 +69,7 @@ func (s *Server) deleteCategory(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		utils.Fail(ctx, utils.ErrInternal, err)
+		utils.Fail(ctx, utils.ErrBadRequest, err)
 	}
 
 	err = categoryRepo.CheckExistence(ctx, db, int32(id))
@@ -82,6 +82,7 @@ func (s *Server) deleteCategory(ctx *gin.Context) {
 			},
 			err,
 		)
+		return
 	}
 
 	err = categoryRepo.Delete(ctx, db, int32(id))
@@ -123,7 +124,7 @@ func (s *Server) updateCategory(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		utils.Fail(ctx, utils.ErrInternal, err)
+		utils.Fail(ctx, utils.ErrBadRequest, err)
 	}
 
 	err = categoryRepo.CheckExistence(ctx, db, int32(id))
