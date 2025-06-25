@@ -138,10 +138,10 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 
 	color := admin.Group("/colors")
 	{
-		color.POST("")
-		color.GET("")
-		color.PUT("/:id")
-		color.DELETE("/:id")
+		color.POST("", s.createColor)
+		color.GET("", s.getColors)
+		color.PUT("/:id", s.updateColor)
+		color.DELETE("/:id", s.deleteColor)
 	}
 }
 
