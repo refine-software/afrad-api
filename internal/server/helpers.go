@@ -92,18 +92,31 @@ type ImageUpload struct {
 	Header *multipart.FileHeader
 }
 
-// this function will fetch the image from the request
-// and return the file and header.
-// it will return an api error,
-// but be careful this function might not return an error nither a file.
-// it treats the file as an optional form feild
-func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
-	// set the form to take 5MB or less files
-	const maxUpload = 5 << 20 // 5 MiB
-	_ = ctx.Request.ParseMultipartForm(maxUpload)
+// getImageFile extracts a single image file from a multipart form request.
+//
+// Parameters:
+//   - ctx:         The Gin context containing the HTTP request.
+//   - formImgName: The name of the form field containing the image.
+//   - maxUploadSize: The maximum allowed size for the uploaded image (in bytes).
+//
+// Behavior:
+//   - Returns nil, nil if the file is not present in the form (i.e., optional field).
+//   - Returns an APIError if the file exceeds the size limit, has an unsupported MIME type,
+//     or if any other error occurs while parsing the form or reading the file.
+//   - If successful, returns an ImageUpload struct containing the opened file and its header.
+//
+// Notes:
+//   - This function does not close the returned file. The caller is responsible for closing it.
+//   - Only "image/png", "image/jpeg", and "image/webp" content types are accepted.
+func getImageFile(
+	ctx *gin.Context,
+	formImgName string,
+	maxUploadSize int64,
+) (*ImageUpload, *utils.APIError) {
+	_ = ctx.Request.ParseMultipartForm(maxUploadSize)
 
 	// fetch image from request
-	file, header, err := ctx.Request.FormFile("image")
+	file, header, err := ctx.Request.FormFile(formImgName)
 	if errors.Is(err, http.ErrMissingFile) {
 		return nil, nil
 	}
@@ -115,15 +128,21 @@ func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
 		}
 	}
 
-	if header.Size > maxUpload {
+	if header.Size > maxUploadSize {
 		return nil, &utils.APIError{
 			Code:    http.StatusBadRequest,
 			Message: "image size is bigger than allowed",
 		}
 	}
 
+	allowedTypes := map[string]bool{
+		"image/png":  true,
+		"image/jpeg": true,
+		"image/webp": true,
+	}
+
 	contentType := header.Header.Get("Content-Type")
-	if !slices.Contains([]string{"image/png", "image/jpeg", "image/webp"}, contentType) {
+	if !allowedTypes[contentType] {
 		return nil, &utils.APIError{
 			Code:    http.StatusBadRequest,
 			Message: "this type of file is not allowed",
@@ -134,6 +153,87 @@ func getImageFile(ctx *gin.Context) (*ImageUpload, *utils.APIError) {
 		File:   file,
 		Header: header,
 	}, nil
+}
+
+// getImageFiles retrieves multiple image files from a multipart form request.
+//
+// Parameters:
+//   - ctx:            The Gin context containing the HTTP request.
+//   - formImgName:    The name of the form field containing the image files.
+//   - maxUploadSize:  The maximum allowed size for each uploaded image (in bytes).
+//
+// Behavior:
+//   - Parses the multipart form data from the request.
+//   - Returns nil, nil if no files are provided under the specified form field (i.e., optional).
+//   - Validates each file for size and MIME type ("image/png", "image/jpeg", "image/webp").
+//   - Opens each valid image file and returns a slice of ImageUpload structs.
+//   - Returns an APIError if any file fails validation or opening.
+//
+// Notes:
+//   - The caller is responsible for closing all returned files to prevent memory/resource leaks.
+//   - This function stops and returns an error as soon as one invalid or unreadable file is encountered.
+//   - The total memory used for parsing is limited to maxUploadSize.
+func getImageFiles(
+	ctx *gin.Context,
+	formImgName string,
+	maxUploadSize int64,
+) ([]ImageUpload, *utils.APIError) {
+	err := ctx.Request.ParseMultipartForm(maxUploadSize)
+	if err != nil {
+		return nil, &utils.APIError{
+			Code:    http.StatusBadRequest,
+			Message: "unable to parse multipart form",
+		}
+	}
+
+	form := ctx.Request.MultipartForm
+	if form == nil || form.File == nil {
+		return nil, nil
+	}
+
+	files := form.File[formImgName]
+	if len(files) == 0 {
+		return nil, nil
+	}
+
+	allowedTypes := map[string]bool{
+		"image/png":  true,
+		"image/jpeg": true,
+		"image/webp": true,
+	}
+
+	var uploads []ImageUpload
+	for _, header := range files {
+		if header.Size > maxUploadSize {
+			return nil, &utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "one of the images exceeds the max size of 5MB",
+			}
+		}
+
+		contentType := header.Header.Get("Content-Type")
+		if !allowedTypes[contentType] {
+			return nil, &utils.APIError{
+				Code:    http.StatusBadRequest,
+				Message: "one of the files is not an allowed image type",
+			}
+		}
+
+		file, err := header.Open()
+		if err != nil {
+			return nil, &utils.APIError{
+				Code:    http.StatusInternalServerError,
+				Message: "unable to open uploaded image file",
+			}
+		}
+
+		uploads = append(uploads, ImageUpload{
+			File:   file,
+			Header: header,
+		})
+	}
+
+	return uploads, nil
 }
 
 func convStrToInt(c *gin.Context, numAsStr string, fieldName string) int {

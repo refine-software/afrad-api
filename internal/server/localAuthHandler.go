@@ -54,7 +54,7 @@ func (s *Server) register(ctx *gin.Context) {
 	}
 
 	imgURL := pgtype.Text{String: "", Valid: false}
-	imgUpload, apiErr := getImageFile(ctx)
+	imgUpload, apiErr := getImageFile(ctx, "image", 2<<20)
 	if apiErr != nil {
 		utils.Fail(ctx, apiErr, nil)
 		return

@@ -81,7 +81,7 @@ func (s *Server) updateUser(c *gin.Context) {
 		user.LastName = pgtype.Text{String: req.LastName, Valid: true}
 	}
 
-	imageUpload, apiErr := getImageFile(c)
+	imageUpload, apiErr := getImageFile(c, "image", 2000<<10) // 2MB
 	if apiErr != nil {
 		utils.Fail(c, apiErr, errors.New(apiErr.Message))
 		return
