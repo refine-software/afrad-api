@@ -1,3 +1,10 @@
+// Package database provides access to the application's PostgreSQL database and
+// defines the service layer for interacting with various data repositories.
+// It offers a singleton service instance that exposes repository interfaces for
+// different domain models such as users, products, authentication, and more.
+//
+// This package also handles connection pooling, transaction management, and
+// context-aware query execution using the pgx PostgreSQL driver.
 package database
 
 import (
