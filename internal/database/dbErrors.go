@@ -54,8 +54,10 @@ var (
 	CheckViolationCode            = "23514"
 )
 
-// the constraints is a map of sql codes and the column of the error.
-// for example: "uniqueViolationCode": "review"
+// Parse interprets a database error and returns a more descriptive application-level error.
+// It maps known PostgreSQL error codes (e.g., unique violations, foreign key violations)
+// to domain-specific errors using the provided constraints map, and attaches contextual
+// information such as the repository and method where the error occurred.
 func Parse(err error, repo, method string, constraints Constraints) error {
 	if err == nil {
 		return nil
