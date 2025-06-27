@@ -102,9 +102,9 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 
 	product := admin.Group("/product")
 	{
+		product.POST("", s.addProduct)
 		product.PUT("/:id")
 		product.DELETE("/:id")
-		product.POST("")
 	}
 
 	category := admin.Group("/category")
