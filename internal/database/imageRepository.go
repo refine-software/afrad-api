@@ -11,6 +11,11 @@ type ImageRepository interface {
 		db Querier,
 		productID int32,
 	) ([]models.Image, error)
+
+	// This method will create a record in the images table.
+	//
+	// Columns required: image, low_res_image, product_id.
+	Create(*gin.Context, Querier, *models.Image) error
 }
 
 type imageRepo struct{}
@@ -55,4 +60,26 @@ func (repo *imageRepo) GetAllOfProduct(
 	}
 
 	return imgs, nil
+}
+
+func (repo *imageRepo) Create(
+	c *gin.Context,
+	db Querier,
+	i *models.Image,
+) error {
+	query := `
+		INSERT INTO images (image, low_res_image, product_id)
+		VALUES ($1, $2, $3)
+	`
+
+	_, err := db.Exec(c, query, i.Image, i.LowResImage, i.ProductID)
+	if err != nil {
+		return Parse(err, "Image", "Create", Constraints{
+			UniqueViolationCode:     "image or low_res_image",
+			ForeignKeyViolationCode: "product",
+			NotNullViolationCode:    "image or low_res_image or product_id",
+		})
+	}
+
+	return nil
 }
