@@ -1,7 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"errors"
+	"image"
+	"image/jpeg"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"slices"
@@ -9,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/models"
@@ -276,4 +281,82 @@ func getRequiredQueryInt(c *gin.Context, queryName string) int {
 	}
 
 	return query
+}
+
+type readSeekCloser struct {
+	*bytes.Reader // embeds Reader, ReaderAt, and Seeker
+}
+
+func newReadSeekCloser(b []byte) multipart.File {
+	return &readSeekCloser{Reader: bytes.NewReader(b)}
+}
+
+func (r *readSeekCloser) Close() error {
+	return nil // no-op close
+}
+
+type ImagePair struct {
+	OriginalURL string
+	LowResURL   string
+}
+
+func (s *Server) UploadImageWithLowRes(
+	c *gin.Context,
+	file multipart.File,
+	header *multipart.FileHeader,
+	targetWidth int,
+) (*ImagePair, *utils.APIError) {
+	// 1. Copy file into buffer
+	var copyBuf bytes.Buffer
+	if _, err := io.Copy(&copyBuf, file); err != nil {
+		return nil, &utils.APIError{
+			Message: "failed to read image",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	// 2. Decode from copied buffer for resizing
+	img, _, err := image.Decode(bytes.NewReader(copyBuf.Bytes()))
+	if err != nil {
+		return nil, &utils.APIError{
+			Message: "invalid image format",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	// 3. Resize
+	lowRes := imaging.Resize(img, targetWidth, 0, imaging.Lanczos)
+	var lowBuf bytes.Buffer
+	err = jpeg.Encode(&lowBuf, lowRes, &jpeg.Options{Quality: 80})
+	if err != nil {
+		return nil, &utils.APIError{
+			Message: "failed to encode low-res image",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	// 4. Upload original
+	originalReader := newReadSeekCloser(copyBuf.Bytes())
+	originalURL, err := s.S3.UploadImage(c, originalReader, header)
+	if err != nil {
+		return nil, &utils.APIError{
+			Message: "failed to upload original image",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	// 5. Upload low-res
+	lowHeader := *header
+	lowHeader.Size = int64(lowBuf.Len())
+	lowHeader.Header.Set("Content-Type", "image/jpeg")
+	lowReader := newReadSeekCloser(lowBuf.Bytes())
+	lowResURL, err := s.S3.UploadImage(c, lowReader, &lowHeader)
+	if err != nil {
+		return nil, &utils.APIError{
+			Message: "failed to encode low-res image",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return &ImagePair{OriginalURL: originalURL, LowResURL: lowResURL}, nil
 }
