@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils/filters"
 )
 
@@ -17,6 +18,12 @@ type ProductRepository interface {
 	) ([]Product, filters.Metadata, error)
 
 	Get(ctx *gin.Context, db Querier, productID int) (*ProductDetails, error)
+
+	// This function will create a product.
+	//
+	// Columns required: name, details, thumbnail, brand_id, product_category.
+	// Returns: id.
+	Create(*gin.Context, Querier, *models.Product) (productID int32, err error)
 }
 
 type productRepo struct{}
@@ -136,4 +143,29 @@ func (pr *productRepo) Get(
 	}
 
 	return &p, nil
+}
+
+func (pr *productRepo) Create(
+	c *gin.Context,
+	db Querier,
+	p *models.Product,
+) (productID int32, err error) {
+	query := `
+		INSERT INTO products (name, details, thumbnail, brand_id, product_category)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`
+
+	err = db.QueryRow(c, query, p.Name, p.Details, p.Thumbnail, p.BrandID, p.ProductCategory).
+		Scan(&productID)
+	if err != nil {
+		return 0, Parse(err, "Product", "Create", Constraints{
+			UniqueViolationCode:           "name",
+			ForeignKeyViolationCode:       "brand_id or product_category", // can’t distinguish which without inspecting error detail
+			NotNullViolationCode:          "name or thumbnail or brand_id or product_category",
+			StringDataRightTruncationCode: "name or thumbnail",
+		})
+	}
+
+	return productID, nil
 }
