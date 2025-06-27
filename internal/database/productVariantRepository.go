@@ -2,10 +2,16 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/refine-software/afrad-api/internal/models"
 )
 
 type ProductVariantRepository interface {
 	GetAllOfProduct(c *gin.Context, db Querier, productID int32) ([]ProductVariantDetails, error)
+
+	// This method will create a product variant.
+	//
+	// Columns required: quantity, price, product_id, color_id, size_id.
+	Create(*gin.Context, Querier, *models.ProductVariant) error
 }
 
 type productVariantRepo struct{}
@@ -67,4 +73,25 @@ func (pvr *productVariantRepo) GetAllOfProduct(
 	}
 
 	return pvs, nil
+}
+
+func (pvr *productVariantRepo) Create(
+	c *gin.Context,
+	db Querier,
+	pv *models.ProductVariant,
+) error {
+	query := `
+		INSERT INTO product_variants (quantity, price, product_id, color_id, size_id)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := db.Exec(c, query, pv.Quantity, pv.Price, pv.ProductID, pv.ColorID, pv.SizeID)
+	if err != nil {
+		return Parse(err, "Product Variant", "Create", Constraints{
+			UniqueViolationCode:     "variant",
+			ForeignKeyViolationCode: "product_id or color_id or size_id",
+		})
+	}
+
+	return nil
 }
