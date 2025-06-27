@@ -1,3 +1,4 @@
+// Package server handles starting the HTTP server and routing.
 package server
 
 import (
