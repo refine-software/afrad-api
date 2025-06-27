@@ -371,3 +371,22 @@ func (s *Server) updateProduct(c *gin.Context) {
 
 	utils.Success(c, "product updated successfully")
 }
+
+func (s *Server) deleteProduct(c *gin.Context) {
+	productID := convStrToInt(c, c.Param("id"), "product id")
+	if productID == 0 {
+		return
+	}
+
+	db := s.DB.Pool()
+	productRepo := s.DB.Product()
+
+	err := productRepo.Delete(c, db, int32(productID))
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, "product deleted successfully")
+}

@@ -104,7 +104,7 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 	{
 		product.POST("", s.addProduct)
 		product.PUT("/:id", s.updateProduct)
-		product.DELETE("/:id")
+		product.DELETE("/:id", s.deleteProduct)
 	}
 
 	variant := product.Group("/variant")
