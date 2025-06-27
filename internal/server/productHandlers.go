@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -113,7 +114,7 @@ func (s *Server) getProduct(c *gin.Context) {
 	ratingsAndReviewsRepo := s.DB.RatingReview()
 	imageRepo := s.DB.Image()
 
-	p, err := productRepo.Get(c, db, productID)
+	p, err := productRepo.GetDetails(c, db, productID)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(c, apiErr, err)
@@ -313,4 +314,60 @@ func (s *Server) addProduct(c *gin.Context) {
 
 	committed = true
 	utils.Created(c, "product created successfully")
+}
+
+type productReq struct {
+	Name       string `json:"name"`
+	Details    string `json:"details"`
+	BrandID    int32  `json:"brandId"`
+	CategoryID int32  `json:"categoryId"`
+}
+
+func (s *Server) updateProduct(c *gin.Context) {
+	productID := convStrToInt(c, c.Param("id"), "product id")
+	if productID == 0 {
+		return
+	}
+
+	var req productReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		utils.Fail(c, utils.ErrBadRequest, err)
+		return
+	}
+
+	db := s.DB.Pool()
+	productRepo := s.DB.Product()
+
+	p, err := productRepo.Get(c, db, productID)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	if strings.TrimSpace(req.Name) != "" {
+		p.Name = req.Name
+	}
+
+	if strings.TrimSpace(req.Details) != "" {
+		p.Details = pgtype.Text{String: req.Details, Valid: strings.TrimSpace(req.Details) != ""}
+	}
+
+	if req.BrandID != 0 {
+		p.BrandID = req.BrandID
+	}
+
+	if req.CategoryID != 0 {
+		p.ProductCategory = req.CategoryID
+	}
+
+	err = productRepo.Update(c, db, p)
+	if err != nil {
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(c, apiErr, err)
+		return
+	}
+
+	utils.Success(c, "product updated successfully")
 }
