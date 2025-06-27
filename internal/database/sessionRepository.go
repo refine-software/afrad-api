@@ -6,7 +6,9 @@ import (
 )
 
 type SessionRepository interface {
-	// Get a single session by the id
+	// Get a single session.
+	//
+	// By: user_id, user_agent.
 	GetByUserIDAndUserAgent(
 		ctx *gin.Context,
 		db Querier,
@@ -40,7 +42,7 @@ func NewSessionRepository() SessionRepository {
 	return &sessionRepo{}
 }
 
-func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
+func (sr *sessionRepo) GetByUserIDAndUserAgent(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
@@ -67,7 +69,7 @@ func (sessionRepo *sessionRepo) GetByUserIDAndUserAgent(
 	return s, Parse(err, "Session", "GetByUserIDAndUserAgent", make(Constraints))
 }
 
-func (s *sessionRepo) GetAllOfUser(
+func (sr *sessionRepo) GetAllOfUser(
 	ctx *gin.Context,
 	db Querier,
 	userID int32,
@@ -99,7 +101,7 @@ func (s *sessionRepo) GetAllOfUser(
 	return sessions, nil
 }
 
-func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) error {
+func (sr *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session) error {
 	query := `
 	INSERT INTO sessions(user_id, user_agent, refresh_token, expires_at)
 	VALUES ($1, $2, $3, $4)
@@ -113,7 +115,7 @@ func (s *sessionRepo) Create(ctx *gin.Context, db Querier, sess *models.Session)
 	})
 }
 
-func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) error {
+func (sr *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session) error {
 	query := `
 	UPDATE sessions
 	SET revoked = $2, refresh_token = $3, expires_at = $4
@@ -126,7 +128,7 @@ func (s *sessionRepo) Update(ctx *gin.Context, db Querier, sess *models.Session)
 	})
 }
 
-func (s *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error {
+func (sr *sessionRepo) RevokeAllOfUser(ctx *gin.Context, db Querier, userID int32) error {
 	query := `
 		UPDATE sessions
 		SET revoked = true
