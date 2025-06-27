@@ -17,13 +17,21 @@ type ProductRepository interface {
 		prodFilter *filters.ProductFilterOptions,
 	) ([]Product, filters.Metadata, error)
 
-	Get(ctx *gin.Context, db Querier, productID int) (*ProductDetails, error)
+	GetDetails(ctx *gin.Context, db Querier, productID int) (*ProductDetails, error)
+
+	Get(ctx *gin.Context, db Querier, productID int) (*models.Product, error)
 
 	// This function will create a product.
 	//
 	// Columns required: name, details, thumbnail, brand_id, product_category.
 	// Returns: id.
 	Create(*gin.Context, Querier, *models.Product) (productID int32, err error)
+
+	// This Method will update the product.
+	//
+	// Columns required: name, details, brand_id, product_category.
+	// By: id.
+	Update(*gin.Context, Querier, *models.Product) error
 }
 
 type productRepo struct{}
@@ -42,7 +50,7 @@ type Product struct {
 	Rating    float32 `json:"rating"`
 }
 
-func (p *productRepo) GetAll(
+func (pr *productRepo) GetAll(
 	ctx *gin.Context,
 	db Querier,
 	f filters.Filters,
@@ -114,7 +122,7 @@ type ProductDetails struct {
 	Category   string      `json:"category"`
 }
 
-func (pr *productRepo) Get(
+func (pr *productRepo) GetDetails(
 	ctx *gin.Context,
 	db Querier,
 	productID int,
@@ -145,6 +153,35 @@ func (pr *productRepo) Get(
 	return &p, nil
 }
 
+func (pr *productRepo) Get(
+	ctx *gin.Context,
+	db Querier,
+	productID int,
+) (*models.Product, error) {
+	query := `
+		SELECT 
+			id,
+			name,
+			details,
+			thumbnail,
+			created_at,
+			updated_at,
+			brand_id,
+			product_category,
+		FROM products
+		WHERE id = $1
+	`
+
+	var p models.Product
+	err := db.QueryRow(ctx, query, productID).
+		Scan(&p.ID, &p.Name, &p.Details, &p.Thumbnail, &p.CreatedAt, &p.UpdatedAt, &p.BrandID, &p.CreatedAt)
+	if err != nil {
+		return nil, Parse(err, "Product", "Get", make(Constraints))
+	}
+
+	return &p, nil
+}
+
 func (pr *productRepo) Create(
 	c *gin.Context,
 	db Querier,
@@ -168,4 +205,27 @@ func (pr *productRepo) Create(
 	}
 
 	return productID, nil
+}
+
+func (pr *productRepo) Update(
+	c *gin.Context,
+	db Querier,
+	p *models.Product,
+) error {
+	query := `
+		UPDATE products
+		SET name = $2, details = $3, brand_id = $4, product_category = $5
+		WHERE id = $1
+	`
+
+	_, err := db.Exec(c, query, p.ID, p.Name, p.Details, p.BrandID, p.ProductCategory)
+	if err != nil {
+		return Parse(err, "Product", "Update", Constraints{
+			UniqueViolationCode:     "name",
+			ForeignKeyViolationCode: "brand_id or product_category",
+			NotNullViolationCode:    "name or brand_id or product_category",
+		})
+	}
+
+	return nil
 }
