@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils/filters"
@@ -32,6 +33,9 @@ type ProductRepository interface {
 	// Columns required: name, details, brand_id, product_category.
 	// By: id.
 	Update(*gin.Context, Querier, *models.Product) error
+
+	// This method will delete a product and all its variants
+	Delete(c *gin.Context, db Querier, id int32) error
 }
 
 type productRepo struct{}
@@ -167,14 +171,14 @@ func (pr *productRepo) Get(
 			created_at,
 			updated_at,
 			brand_id,
-			product_category,
+			product_category
 		FROM products
 		WHERE id = $1
 	`
 
 	var p models.Product
 	err := db.QueryRow(ctx, query, productID).
-		Scan(&p.ID, &p.Name, &p.Details, &p.Thumbnail, &p.CreatedAt, &p.UpdatedAt, &p.BrandID, &p.CreatedAt)
+		Scan(&p.ID, &p.Name, &p.Details, &p.Thumbnail, &p.CreatedAt, &p.UpdatedAt, &p.BrandID, &p.ProductCategory)
 	if err != nil {
 		return nil, Parse(err, "Product", "Get", make(Constraints))
 	}
@@ -225,6 +229,28 @@ func (pr *productRepo) Update(
 			ForeignKeyViolationCode: "brand_id or product_category",
 			NotNullViolationCode:    "name or brand_id or product_category",
 		})
+	}
+
+	return nil
+}
+
+func (pr *productRepo) Delete(
+	c *gin.Context,
+	db Querier,
+	id int32,
+) error {
+	query := `
+		DELETE FROM products
+		WHERE id = $1
+	`
+
+	result, err := db.Exec(c, query, id)
+	if err != nil {
+		return Parse(err, "Product", "Delete", make(Constraints))
+	}
+
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Product", "Delete", make(Constraints))
 	}
 
 	return nil
