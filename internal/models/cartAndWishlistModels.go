@@ -3,11 +3,11 @@ package models
 import "time"
 
 type Cart struct {
-	ID         int32
-	TotalPrice int
-	Quantity   int
-	CreatedAt  time.Time
-	UserID     int32
+	ID         int32     `json:"id"`
+	TotalPrice int       `json:"totalPrice,omitempty"`
+	Quantity   int       `json:"quantity,omitempty"`
+	CreatedAt  time.Time `json:"-"`
+	UserID     int32     `json:"userId,omitempty"`
 }
 
 type CartItem struct {
