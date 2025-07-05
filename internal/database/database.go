@@ -22,6 +22,8 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
+	CartItem() CartItemRepository
+	Cart() CartRepository
 	Brand() BrandRepository
 	Category() CategoryRepository
 	Color() ColorRepository
@@ -52,6 +54,8 @@ type Querier interface {
 }
 
 type service struct {
+	cartItemRepo                CartItemRepository
+	cartRepo                    CartRepository
 	brandRepo                   BrandRepository
 	categoryRepo                CategoryRepository
 	colorRepo                   ColorRepository
@@ -107,6 +111,8 @@ func New(env *config.Env) Service {
 		ratingReviewRepo:            NewRatingReviewRepository(),
 		sizeRepo:                    NewSizeRepository(),
 		wishlistRepo:                NewWishlistRepository(),
+		cartRepo:                    NewCartRepository(),
+		cartItemRepo:                NewCartItemRepository(),
 	}
 
 	return dbInstance
@@ -170,6 +176,14 @@ func (s *service) Size() SizeRepository {
 
 func (s *service) Wishlist() WishlistRepository {
 	return s.wishlistRepo
+}
+
+func (s *service) Cart() CartRepository {
+	return s.cartRepo
+}
+
+func (s *service) CartItem() CartItemRepository {
+	return s.cartItemRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
