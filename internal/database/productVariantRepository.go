@@ -7,6 +7,7 @@ import (
 
 type ProductVariantRepository interface {
 	GetAllOfProduct(c *gin.Context, db Querier, productID int32) ([]ProductVariantDetails, error)
+	GetPriceByID(c *gin.Context, db Querier, id int32) (int, error)
 
 	// This method will create a product variant.
 	//
@@ -94,4 +95,19 @@ func (pvr *productVariantRepo) Create(
 	}
 
 	return nil
+}
+
+func (pvr *productVariantRepo) GetPriceByID(c *gin.Context, db Querier, id int32) (int, error) {
+	query := `
+		SELECT price
+		FROM product_variants
+		WHERE id = $1
+	`
+	var price int
+
+	err := db.QueryRow(c, query, id).Scan(&price)
+	if err != nil {
+		return 0, Parse(err, "Product Variant", "GetPriceByID", make(Constraints))
+	}
+	return price, nil
 }
