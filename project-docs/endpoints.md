@@ -64,10 +64,11 @@
 
 | DONE | Method   | Endpoint     | Description                              |
 | ---- | -------- | ------------ | ---------------------------------------- |
-| ❌   | `GET`    | `/cart`      | Fetch cart details (cart and cart items) |
-| ❌   | `POST`   | `/cart/item` | Add item to cart                         |
-| ❌   | `PATCH`  | `/cart/:id`  | Update cart item quantity                |
-| ❌   | `DELETE` | `/cart/:id`  | Delete cart item quantity                |
+| ✅   | `GET`    | `/cart`      | Fetch cart details (cart and cart items) |
+| ✅   | `POST`   | `/cart/item` | Add item to cart                         |
+| ✅   | `PATCH`  | `/cart/:id`  | Update cart item quantity                |
+| ✅   | `DELETE` | `/cart/:id`  | Delete cart item                         |
+| ✅   | `DELETE` | `/cart`      | Delete the whole cart                    |
 
 ## Wishlist
 
