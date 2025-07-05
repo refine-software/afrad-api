@@ -75,10 +75,11 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 
 	cart := protected.Group("/cart")
 	{
-		cart.GET("")
-		cart.POST("/item")
-		cart.PATCH("/:id")
-		cart.DELETE("/:id")
+		cart.GET("", s.getCart)
+		cart.POST("/item", s.createCart)
+		cart.PATCH("/:id", s.updateCartItemQuantity)
+		cart.DELETE("/:id", s.deleteCartItem)
+		cart.DELETE("", s.deleteCart)
 	}
 
 	wishlist := protected.Group("/wishlist")
