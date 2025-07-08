@@ -51,6 +51,17 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 		products.GET("/:id", s.getProduct)
 		products.GET("/categories", s.getCategories)
 	}
+
+	sizes := e.Group("/sizes")
+	{
+		sizes.GET("", s.GetSizes)
+	}
+
+	colors := e.Group("/colors")
+	{
+		colors.GET("", s.getColors)
+	}
+
 	e.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
@@ -137,20 +148,18 @@ func (s *Server) registerAdminRoutes(e *gin.Engine) {
 		orders.GET("")
 	}
 
-	size := admin.Group("/sizes")
+	sizes := admin.Group("/sizes")
 	{
-		size.POST("", s.createSize)
-		size.GET("", s.GetSizes)
-		size.PUT("/:id", s.updateSize)
-		size.DELETE("/:id", s.deleteSize)
+		sizes.POST("", s.createSize)
+		sizes.PUT("/:id", s.updateSize)
+		sizes.DELETE("/:id", s.deleteSize)
 	}
 
-	color := admin.Group("/colors")
+	colors := admin.Group("/colors")
 	{
-		color.POST("", s.createColor)
-		color.GET("", s.getColors)
-		color.PUT("/:id", s.updateColor)
-		color.DELETE("/:id", s.deleteColor)
+		colors.POST("", s.createColor)
+		colors.PUT("/:id", s.updateColor)
+		colors.DELETE("/:id", s.deleteColor)
 	}
 }
 
