@@ -14,7 +14,7 @@ type Order struct {
 	Name        string
 	PhoneNumber string
 	TotalPrice  int
-	CitiesID    int32
+	CityID      int32
 	UserID      int32
 	OrderStatus OrderStatus
 	CreatedAt   time.Time
