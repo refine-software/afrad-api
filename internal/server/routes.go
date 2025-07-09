@@ -108,7 +108,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 	orders := protected.Group("/orders")
 	{
 		orders.GET("")
-		orders.POST("")
+		orders.POST("", s.createOrder)
 		orders.GET("/:id")
 		orders.PATCH("/:id/cancel")
 	}
