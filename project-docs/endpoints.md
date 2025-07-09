@@ -47,9 +47,9 @@
 | ---- | -------- | -------------------- | ---------------------------------------------------- |
 | ✅   | `GET`    | `/products`          | Fetch products with pagination and search and filter |
 | ✅   | `GET`    | `/product/:id`       | Fetch product details                                |
-| ❌   | `PUT`    | `/admin/product/:id` | Update product (Admin only)                          |
-| ❌   | `DELETE` | `/admin/product/:id` | Delete product (Admin only)                          |
-| ❌   | `POST`   | `/admin/product`     | Add a product (Admin only)                           |
+| ✅   | `PUT`    | `/admin/product/:id` | Update product (Admin only)                          |
+| ✅   | `DELETE` | `/admin/product/:id` | Delete product (Admin only)                          |
+| ✅   | `POST`   | `/admin/product`     | Add a product (Admin only)                           |
 
 ## Category
 
@@ -74,19 +74,21 @@
 
 | DONE | Method   | Endpoint        | Description               |
 | ---- | -------- | --------------- | ------------------------- |
-| ❌   | `GET`    | `/wishlist`     | Fetch the wishlist        |
-| ❌   | `POST`   | `/wishlist/:id` | Add item to wishlist      |
-| ❌   | `DELETE` | `/wishlist/:id` | Delete item from wishlist |
+| ✅   | `GET`    | `/wishlist`     | Fetch the wishlist        |
+| ✅   | `POST`   | `/wishlist/:id` | Add item to wishlist      |
+| ✅   | `DELETE` | `/wishlist/:id` | Delete item from wishlist |
 
 ## Order
 
-| DONE | Method  | Endpoint            | Description                   |
-| ---- | ------- | ------------------- | ----------------------------- |
-| ❌   | `GET`   | `/admin/orders`     | Fetch all orders (Admin only) |
-| ❌   | `GET`   | `/orders`           | Fetch all orders              |
-| ❌   | `GET`   | `/order/:id`        | Fetch a specific order        |
-| ❌   | `POST`  | `/order`            | Add order (checkout)          |
-| ❌   | `PATCH` | `/order/:id/cancel` | Cancel a specific order       |
+| DONE | Method  | Endpoint                          | Description                     |
+| ---- | ------- | --------------------------------- | ------------------------------- |
+| ❌   | `GET`   | `/admin/orders`                   | Fetch all orders (Admin only)   |
+| ❌   | `GET`   | `/orders`                         | Fetch all user orders           |
+| ❌   | `GET`   | `/order/:id`                      | Fetch a specific order          |
+| ❌   | `POST`  | `/order`                          | Add order (checkout)            |
+| ❌   | `PATCH` | `/order/:id/cancel`               | Cancel a specific order         |
+| ❌   | `PATCH` | `admin/order/:id/next-status`     | Go to the next order status     |
+| ❌   | `PATCH` | `admin/order/:id/previous-status` | Go to the previous order status |
 
 ## Discount
 
