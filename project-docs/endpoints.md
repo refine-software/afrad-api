@@ -53,30 +53,30 @@
 
 ## Category
 
-| DONE | Method   | Endpoint               | Description                     |
-| ---- | -------- | ---------------------- | ------------------------------- |
-| ✅   | `GET`    | `/products/categories` | Fetch all categories            |
-| ✅   | `POST`   | `/admin/category`      | Add a new category (admin only) |
-| ✅   | `PATCH`  | `/admin/category/:id`  | Update category (admin only)    |
-| ✅   | `DELETE` | `/admin/category/:id`  | Delete category (admin only)    |
+| DONE | Method   | Endpoint              | Description                     |
+| ---- | -------- | --------------------- | ------------------------------- |
+| ✅   | `GET`    | `/categories`         | Fetch all categories            |
+| ✅   | `POST`   | `/admin/category`     | Add a new category (admin only) |
+| ✅   | `PATCH`  | `/admin/category/:id` | Update category (admin only)    |
+| ✅   | `DELETE` | `/admin/category/:id` | Delete category (admin only)    |
 
 ## Cart
 
-| DONE | Method   | Endpoint     | Description                              |
-| ---- | -------- | ------------ | ---------------------------------------- |
-| ✅   | `GET`    | `/cart`      | Fetch cart details (cart and cart items) |
-| ✅   | `POST`   | `/cart/item` | Add item to cart                         |
-| ✅   | `PATCH`  | `/cart/:id`  | Update cart item quantity                |
-| ✅   | `DELETE` | `/cart/:id`  | Delete cart item                         |
-| ✅   | `DELETE` | `/cart`      | Delete the whole cart                    |
+| DONE | Method   | Endpoint    | Description                              |
+| ---- | -------- | ----------- | ---------------------------------------- |
+| ✅   | `GET`    | `/cart`     | Fetch cart details (cart and cart items) |
+| ✅   | `POST`   | `/cart`     | Add item to cart                         |
+| ✅   | `PATCH`  | `/cart/:id` | Update cart item quantity                |
+| ✅   | `DELETE` | `/cart/:id` | Delete cart item                         |
+| ✅   | `DELETE` | `/cart`     | Delete the whole cart                    |
 
 ## Wishlist
 
-| DONE | Method   | Endpoint        | Description               |
-| ---- | -------- | --------------- | ------------------------- |
-| ✅   | `GET`    | `/wishlist`     | Fetch the wishlist        |
-| ✅   | `POST`   | `/wishlist/:id` | Add item to wishlist      |
-| ✅   | `DELETE` | `/wishlist/:id` | Delete item from wishlist |
+| DONE | Method   | Endpoint                | Description               |
+| ---- | -------- | ----------------------- | ------------------------- |
+| ✅   | `GET`    | `/wishlist`             | Fetch the wishlist        |
+| ✅   | `POST`   | `/wishlist/:product_id` | Add item to wishlist      |
+| ✅   | `DELETE` | `/wishlist/:id`         | Delete item from wishlist |
 
 ## Order
 
@@ -85,7 +85,7 @@
 | ❌   | `GET`   | `/admin/orders`                   | Fetch all orders (Admin only)   |
 | ❌   | `GET`   | `/orders`                         | Fetch all user orders           |
 | ❌   | `GET`   | `/order/:id`                      | Fetch a specific order          |
-| ❌   | `POST`  | `/order`                          | Add order (checkout)            |
+| ✅   | `POST`  | `/order`                          | Add order (checkout)            |
 | ❌   | `PATCH` | `/order/:id/cancel`               | Cancel a specific order         |
 | ❌   | `PATCH` | `admin/order/:id/next-status`     | Go to the next order status     |
 | ❌   | `PATCH` | `admin/order/:id/previous-status` | Go to the previous order status |
@@ -114,21 +114,21 @@
 
 ## Colors
 
-| DONE | Method   | Endpoint     | Description       |
-| ---- | -------- | ------------ | ----------------- |
-| ✅   | `GET`    | `/colors`    | Get all colors    |
-| ✅   | `POST`   | `/color`     | Create color      |
-| ✅   | `PUT`    | `/color/:id` | Update color name |
-| ✅   | `DELETE` | `/color/:id` | Delete color      |
+| DONE | Method   | Endpoint            | Description       |
+| ---- | -------- | ------------------- | ----------------- |
+| ✅   | `GET`    | `/colors`           | Get all colors    |
+| ✅   | `POST`   | `/admin/colors`     | Create color      |
+| ✅   | `PUT`    | `/admin/colors/:id` | Update color name |
+| ✅   | `DELETE` | `/admin/colors/:id` | Delete color      |
 
 ## Sizes
 
-| DONE | Method   | Endpoint    | Description      |
-| ---- | -------- | ----------- | ---------------- |
-| ✅   | `GET`    | `/sizes`    | Get all sizes    |
-| ✅   | `POST`   | `/size`     | Create size      |
-| ✅   | `PUT`    | `/size/:id` | Update size name |
-| ✅   | `DELETE` | `/size/:id` | Delete size      |
+| DONE | Method   | Endpoint           | Description      |
+| ---- | -------- | ------------------ | ---------------- |
+| ✅   | `GET`    | `/sizes`           | Get all sizes    |
+| ✅   | `POST`   | `/admin/sizes`     | Create size      |
+| ✅   | `PUT`    | `/admin/sizes/:id` | Update size name |
+| ✅   | `DELETE` | `/admin/sizes/:id` | Delete size      |
 
 ---
 
