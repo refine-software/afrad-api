@@ -143,7 +143,7 @@ func (s *Server) getCart(ctx *gin.Context) {
 
 	res = cartResponse{
 		Cart:      *cart,
-		CartItems: *cartItems,
+		CartItems: cartItems,
 	}
 
 	utils.Success(ctx, res)
@@ -257,4 +257,5 @@ func (s *Server) deleteCart(ctx *gin.Context) {
 		utils.Fail(ctx, apiErr, err)
 		return
 	}
+	utils.Success(ctx, nil)
 }
