@@ -77,8 +77,8 @@ func (r *passwordResetRepo) Update(ctx *gin.Context, db Querier, userID int32) e
 		return Parse(err, "Password Reset", "Update", make(Constraints))
 	}
 
-	if rowsAffected := result.RowsAffected(); rowsAffected == 0 {
-		return pgx.ErrNoRows
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Password Reset", "Update", make(Constraints))
 	}
 
 	return nil
