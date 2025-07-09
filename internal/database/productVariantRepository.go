@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -13,6 +14,18 @@ type ProductVariantRepository interface {
 	//
 	// Columns required: quantity, price, product_id, color_id, size_id.
 	Create(*gin.Context, Querier, *models.ProductVariant) error
+
+	// This method will get a variant by id.
+	Get(c *gin.Context, db Querier, variantID int32) (ProductVariantDetails, error)
+
+	// This method will delete a variant by id.
+	Delete(c *gin.Context, db Querier, variantID int) error
+
+	// This method will update the product variant.
+	//
+	// Columns required: quantity, price, color_id, size_id,
+	// By: id.
+	Update(*gin.Context, Querier, *models.ProductVariant) error
 }
 
 type productVariantRepo struct{}
@@ -27,6 +40,34 @@ type ProductVariantDetails struct {
 	Price    int    `json:"price"`
 	Color    string `json:"color"`
 	Size     string `json:"size"`
+}
+
+func (pvr *productVariantRepo) Get(
+	c *gin.Context,
+	db Querier,
+	variantID int32,
+) (ProductVariantDetails, error) {
+	query := `
+		SELECT 
+			pv.id, 
+			pv.quantity, 
+			pv.price, 
+			c.color, 
+			s.size || ' (' || s.label || ')' as size
+		FROM product_variants pv
+		JOIN colors c ON pv.color_id = c.id
+		JOIN sizes s ON pv.size_id = s.id
+		WHERE pv.id = $1
+	`
+
+	var pv ProductVariantDetails
+	err := db.QueryRow(c, query, variantID).
+		Scan(&pv.ID, &pv.Quantity, &pv.Price, &pv.Color, &pv.Size)
+	if err != nil {
+		return ProductVariantDetails{}, Parse(err, "Product Variant", "Get", make(Constraints))
+	}
+
+	return pv, nil
 }
 
 func (pvr *productVariantRepo) GetAllOfProduct(
@@ -110,4 +151,53 @@ func (pvr *productVariantRepo) GetPriceByID(c *gin.Context, db Querier, id int32
 		return 0, Parse(err, "Product Variant", "GetPriceByID", make(Constraints))
 	}
 	return price, nil
+}
+
+func (pvr *productVariantRepo) Delete(
+	c *gin.Context,
+	db Querier,
+	variantID int,
+) error {
+	query := `
+		DELETE FROM product_variants
+		WHERE id = $1
+	`
+
+	result, err := db.Exec(c, query, variantID)
+	if err != nil {
+		return Parse(err, "Product Variant", "Delete", make(Constraints))
+	}
+
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Product Variant", "Delete", make(Constraints))
+	}
+
+	return nil
+}
+
+func (pvr *productVariantRepo) Update(
+	c *gin.Context,
+	db Querier,
+	pv *models.ProductVariant,
+) error {
+	query := `
+		UPDATE product_variants
+		SET quantity = $2, price = $3, color_id = $4, size_id = $5
+		WHERE id = $1
+	`
+
+	result, err := db.Exec(c, query, pv.ID, pv.Quantity, pv.Price, pv.ColorID, pv.SizeID)
+	if err != nil {
+		return Parse(err, "Product Variant", "Update", Constraints{
+			UniqueViolationCode:     "product_id, color_id, size_id",
+			ForeignKeyViolationCode: "color_id or size_id",
+			NotNullViolationCode:    "quantity or price or color_id or size_id",
+		})
+	}
+
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Product Variant", "Update", make(Constraints))
+	}
+
+	return nil
 }
