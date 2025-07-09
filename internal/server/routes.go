@@ -52,6 +52,11 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 		products.GET("/categories", s.getCategories)
 	}
 
+	variant := products.Group("/variants")
+	{
+		variant.GET("/:id", s.getVariant)
+	}
+
 	sizes := e.Group("/sizes")
 	{
 		sizes.GET("", s.GetSizes)
@@ -112,19 +117,18 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 func (s *Server) registerAdminRoutes(e *gin.Engine) {
 	admin := e.Group("/admin")
 
-	product := admin.Group("/product")
+	product := admin.Group("/products")
 	{
 		product.POST("", s.addProduct)
 		product.PUT("/:id", s.updateProduct)
 		product.DELETE("/:id", s.deleteProduct)
-	}
 
-	variant := product.Group("/variant")
-	{
-		variant.GET("")
-		variant.POST("")
-		variant.PUT("")
-		variant.DELETE("")
+		variant := product.Group("/variants")
+		{
+			variant.POST("", s.addVariant)
+			variant.PUT("/:id", s.updateVariant)
+			variant.DELETE("/:id", s.deleteVariant)
+		}
 	}
 
 	category := admin.Group("/category")
