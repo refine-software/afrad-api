@@ -19,7 +19,7 @@ type CartItemRepository interface {
 	GetPriceQuantityByCartID(ctx *gin.Context, db Querier, cartID int32) (int, int, error)
 
 	// Get cart Items by cart_id
-	GetAll(ctx *gin.Context, db Querier, cartID int32) (*[]GetCartItems, error)
+	GetAll(ctx *gin.Context, db Querier, cartID int32) ([]GetCartItems, error)
 
 	// Update cart item quantity by id
 	Update(ctx *gin.Context, db Querier, id int32, quantity int) error
@@ -98,7 +98,7 @@ type GetCartItems struct {
 	ID           int32  `json:"id"`
 	Quantity     int    `json:"quantity"`
 	TotalPrice   int    `json:"totalPrice"`
-	ProductID    int32  `json:"productId"`
+	VariantID    int32  `json:"variantId"`
 	ProductName  string `json:"productName"`
 	ProductImg   string `json:"productImg"`
 	ProductPrice int    `json:"productPrice"`
@@ -110,14 +110,13 @@ func (r cartItemRepo) GetAll(
 	ctx *gin.Context,
 	db Querier,
 	cartID int32,
-) (*[]GetCartItems, error) {
+) ([]GetCartItems, error) {
 	query := `
-		
 		SELECT
 			cart_items.id, 
 			cart_items.quantity,
 			cart_items.total_price,
-			products.id AS product_id,
+			product_variants.id AS variant_id,
 			products.name,
 			products.thumbnail,
 			product_variants.price,
@@ -141,7 +140,7 @@ func (r cartItemRepo) GetAll(
 			&i.ID,
 			&i.Quantity,
 			&i.TotalPrice,
-			&i.ProductID,
+			&i.VariantID,
 			&i.ProductName,
 			&i.ProductImg,
 			&i.ProductPrice,
@@ -153,7 +152,7 @@ func (r cartItemRepo) GetAll(
 		}
 		cartItems = append(cartItems, i)
 	}
-	return &cartItems, nil
+	return cartItems, nil
 }
 
 func (r *cartItemRepo) Update(ctx *gin.Context, db Querier, id int32, quantity int) error {
