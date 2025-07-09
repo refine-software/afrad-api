@@ -22,6 +22,9 @@ import (
 
 // Service represents a service that interacts with a database.
 type Service interface {
+	City() CityRepository
+	OrderDetails() OrderDetailsRepository
+	Order() OrderRepository
 	CartItem() CartItemRepository
 	Cart() CartRepository
 	Brand() BrandRepository
@@ -54,6 +57,9 @@ type Querier interface {
 }
 
 type service struct {
+	cityRepo                    CityRepository
+	orderDetailsRepo            OrderDetailsRepository
+	orderRepo                   OrderRepository
 	cartItemRepo                CartItemRepository
 	cartRepo                    CartRepository
 	brandRepo                   BrandRepository
@@ -113,6 +119,9 @@ func New(env *config.Env) Service {
 		wishlistRepo:                NewWishlistRepository(),
 		cartRepo:                    NewCartRepository(),
 		cartItemRepo:                NewCartItemRepository(),
+		orderRepo:                   NewOrderRepository(),
+		orderDetailsRepo:            NewOrderDetailsRepository(),
+		cityRepo:                    NewCityRepository(),
 	}
 
 	return dbInstance
@@ -184,6 +193,18 @@ func (s *service) Cart() CartRepository {
 
 func (s *service) CartItem() CartItemRepository {
 	return s.cartItemRepo
+}
+
+func (s *service) Order() OrderRepository {
+	return s.orderRepo
+}
+
+func (s *service) OrderDetails() OrderDetailsRepository {
+	return s.orderDetailsRepo
+}
+
+func (s *service) City() CityRepository {
+	return s.cityRepo
 }
 
 func (s *service) Pool() *pgxpool.Pool {
