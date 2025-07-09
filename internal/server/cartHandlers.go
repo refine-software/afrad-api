@@ -18,7 +18,7 @@ type cartReq struct {
 	Quantity  int   `json:"quantity"  binding:"required"`
 }
 
-func (s *Server) createCart(ctx *gin.Context) {
+func (s *Server) addToCart(ctx *gin.Context) {
 	var req cartReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
@@ -195,17 +195,15 @@ func (s *Server) updateCartItemQuantity(ctx *gin.Context) {
 }
 
 func (s *Server) deleteCartItem(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
+	id := convStrToInt(ctx, ctx.Param("id"), "cart item id")
+	if id == 0 {
 		return
 	}
 
 	db := s.DB.Pool()
 	cartItemRepo := s.DB.CartItem()
 
-	err = cartItemRepo.CheckExistence(ctx, db, int32(id))
+	err := cartItemRepo.CheckExistence(ctx, db, int32(id))
 	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
 		return

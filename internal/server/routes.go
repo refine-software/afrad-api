@@ -49,7 +49,11 @@ func (s *Server) registerPublicRoutes(e *gin.Engine) {
 	{
 		products.GET("", s.getAllProducts)
 		products.GET("/:id", s.getProduct)
-		products.GET("/categories", s.getCategories)
+	}
+
+	categories := e.Group("/categories")
+	{
+		categories.GET("", s.getCategories)
 	}
 
 	variant := products.Group("/variants")
@@ -92,7 +96,7 @@ func (s *Server) registerUserRoutes(e *gin.Engine) {
 	cart := protected.Group("/cart")
 	{
 		cart.GET("", s.getCart)
-		cart.POST("/item", s.createCart)
+		cart.POST("", s.addToCart)
 		cart.PATCH("/:id", s.updateCartItemQuantity)
 		cart.DELETE("/:id", s.deleteCartItem)
 		cart.DELETE("", s.deleteCart)
