@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -103,9 +104,12 @@ func (r *cartRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 		DELETE FROM carts
 		WHERE id = $1
 	`
-	_, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, id)
 	if err != nil {
 		return Parse(err, "Cart", "Delete", Constraints{ForeignKeyViolationCode: "cart_item"})
+	}
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Cart", "Delete", make(Constraints))
 	}
 	return nil
 }
