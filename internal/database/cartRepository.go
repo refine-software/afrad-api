@@ -21,7 +21,7 @@ type CartRepository interface {
 	GetByUserID(ctx *gin.Context, db Querier, userID int32) (*models.Cart, error)
 
 	// Delete cart by user id
-	Delete(ctx *gin.Context, db Querier, id int32) error
+	Delete(ctx *gin.Context, db Querier, userID int32) error
 }
 
 type cartRepo struct{}
@@ -99,14 +99,14 @@ func (r *cartRepo) GetByUserID(
 	return &cart, nil
 }
 
-func (r *cartRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
+func (r *cartRepo) Delete(ctx *gin.Context, db Querier, userID int32) error {
 	query := `
 		DELETE FROM carts
-		WHERE id = $1
+		WHERE user_id = $1
 	`
-	result, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, userID)
 	if err != nil {
-		return Parse(err, "Cart", "Delete", Constraints{ForeignKeyViolationCode: "cart_item"})
+		return Parse(err, "Cart", "Delete", make(Constraints))
 	}
 	if result.RowsAffected() == 0 {
 		return Parse(pgx.ErrNoRows, "Cart", "Delete", make(Constraints))

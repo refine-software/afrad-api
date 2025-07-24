@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -161,28 +160,10 @@ func (s *Server) updateCartItemQuantity(ctx *gin.Context) {
 		return
 	}
 
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
+	id := convStrToInt(ctx, ctx.Param("id"), "cart_item_id")
 
 	db := s.DB.Pool()
 	cartItemRepo := s.DB.CartItem()
-
-	err = cartItemRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "cart item doesn't exists",
-			},
-			err,
-		)
-		return
-	}
 
 	err = cartItemRepo.Update(ctx, db, int32(id), req.Quantity)
 	if err != nil {
@@ -203,13 +184,7 @@ func (s *Server) deleteCartItem(ctx *gin.Context) {
 	db := s.DB.Pool()
 	cartItemRepo := s.DB.CartItem()
 
-	err := cartItemRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
-
-	err = cartItemRepo.Delete(ctx, db, int32(id))
+	err := cartItemRepo.Delete(ctx, db, int32(id))
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
@@ -231,25 +206,9 @@ func (s *Server) deleteCart(ctx *gin.Context) {
 	}
 
 	cartRepo := s.DB.Cart()
-	cartItemRepo := s.DB.CartItem()
+	db := s.DB.Pool()
 
-	err = s.DB.WithTransaction(ctx, func(tx pgx.Tx) error {
-		var cartID int32
-		cartID, err = cartRepo.GetIDByUserID(ctx, tx, int32(userID))
-		if err != nil {
-			return err
-		}
-		err = cartItemRepo.DeleteByCartID(ctx, tx, cartID)
-		if err != nil {
-			return err
-		}
-		err = cartRepo.Delete(ctx, tx, cartID)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
+	err = cartRepo.Delete(ctx, db, int32(userID))
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
