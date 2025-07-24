@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/refine-software/afrad-api/internal/models"
 )
@@ -220,9 +221,12 @@ func (repo *ratingReviewRepo) Delete(c *gin.Context, db Querier, reviewID int32)
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(c, query, reviewID)
+	result, err := db.Exec(c, query, reviewID)
 	if err != nil {
 		return Parse(err, "Rating Review", "Delete", make(Constraints))
+	}
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Rating Review", "Delete", make(Constraints))
 	}
 
 	return nil

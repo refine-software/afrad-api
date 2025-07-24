@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -22,9 +23,6 @@ type SizeRepository interface {
 	// Update size and label by id,
 	// required columns:size, label.
 	Update(ctx *gin.Context, db Querier, size *models.Size) error
-
-	// Check size existence by id
-	CheckExistence(ctx *gin.Context, db Querier, id int32) error
 
 	// Delete size by id
 	Delete(ctx *gin.Context, db Querier, id int32) error
@@ -143,22 +141,12 @@ func (r *sizeRepo) Update(ctx *gin.Context, db Querier, size *models.Size) error
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(ctx, query, size.ID, size.Size, size.Label)
+	result, err := db.Exec(ctx, query, size.ID, size.Size, size.Label)
 	if err != nil {
 		return Parse(err, "Size", "Update", Constraints{UniqueViolationCode: "size, label"})
 	}
-	return nil
-}
-
-func (r *sizeRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) error {
-	query := `
-		SELECT 1 AS exist FROM sizes
-		WHERE id = $1
-	`
-	var exist int32
-	err := db.QueryRow(ctx, query, id).Scan(&exist)
-	if err != nil {
-		return Parse(err, "Size", "CheckExistence", make(Constraints))
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Size", "Update", make(Constraints))
 	}
 	return nil
 }
@@ -169,9 +157,12 @@ func (r *sizeRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, id)
 	if err != nil {
 		return Parse(err, "Size", "Delete", Constraints{ErrForeignKey: "id"})
+	}
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Size", "Delete", make(Constraints))
 	}
 
 	return nil

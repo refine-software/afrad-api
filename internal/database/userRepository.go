@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -183,11 +184,14 @@ func (r *userRepo) Delete(ctx *gin.Context, db Querier, id int) error {
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, id)
 	if err != nil {
 		return Parse(err, "User", "Delete", Constraints{
 			ForeignKeyViolationCode: "user_id", // for FK violation in dependent tables
 		})
+	}
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "User", "Delete", make(Constraints))
 	}
 
 	return nil

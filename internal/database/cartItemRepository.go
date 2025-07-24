@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -24,14 +25,8 @@ type CartItemRepository interface {
 	// Update cart item quantity by id
 	Update(ctx *gin.Context, db Querier, id int32, quantity int) error
 
-	// Check cart item Existence by id
-	CheckExistence(ctx *gin.Context, db Querier, id int32) error
-
 	// Delete cart item by id
 	Delete(ctx *gin.Context, db Querier, id int32) error
-
-	// Delete cart items by cart id
-	DeleteByCartID(ctx *gin.Context, db Querier, cartID int32) error
 }
 
 type cartItemRepo struct{}
@@ -161,24 +156,14 @@ func (r *cartItemRepo) Update(ctx *gin.Context, db Querier, id int32, quantity i
 		SET quantity = $2 
 		WHERE id = $1
 	`
-	_, err := db.Exec(ctx, query, id, quantity)
+	result, err := db.Exec(ctx, query, id, quantity)
 	if err != nil {
 		return Parse(err, "Cart Item", "Update", Constraints{NotNullViolationCode: "quantity"})
 	}
-
-	return nil
-}
-
-func (r *cartItemRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) error {
-	query := `
-		SELECT 1 AS exist FROM cart_items
-		WHERE id = $1
-	`
-	var exist int32
-	err := db.QueryRow(ctx, query, id).Scan(&exist)
-	if err != nil {
-		return Parse(err, "Cart Item", "CheckExistence", make(Constraints))
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Cart Item", "Update", make(Constraints))
 	}
+
 	return nil
 }
 
@@ -187,21 +172,12 @@ func (r *cartItemRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 		DELETE FROM cart_items
 		WHERE id = $1
 	`
-	_, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, id)
 	if err != nil {
 		return Parse(err, "Cart Item", "Delete", make(Constraints))
 	}
-	return nil
-}
-
-func (r *cartItemRepo) DeleteByCartID(ctx *gin.Context, db Querier, cartID int32) error {
-	query := `
-		DELETE FROM cart_items
-		WHERE cart_id = $1
-	`
-	_, err := db.Exec(ctx, query, cartID)
-	if err != nil {
-		return Parse(err, "Cart Item", "DeleteByCartID", make(Constraints))
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Cart Item", "Delete", make(Constraints))
 	}
 	return nil
 }

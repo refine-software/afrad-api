@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/refine-software/afrad-api/internal/models"
 )
 
@@ -15,9 +16,6 @@ type CategoryRepository interface {
 
 	// Delete category by id.
 	Delete(ctx *gin.Context, db Querier, id int32) error
-
-	// Check if category exists by id.
-	CheckExistence(ctx *gin.Context, db Querier, id int32) error
 
 	// Update category name by id
 	Update(ctx *gin.Context, db Querier, id int32, newName string) error
@@ -90,24 +88,14 @@ func (r *categoryRepo) Delete(ctx *gin.Context, db Querier, id int32) error {
 		DELETE FROM categories 
 		WHERE id = $1
 	`
-	_, err := db.Exec(ctx, query, id)
+	result, err := db.Exec(ctx, query, id)
 	if err != nil {
 		return Parse(err, "Category", "Delete", Constraints{
 			ForeignKeyViolationCode: "category", // Could be product or subcategory depending on FK
 		})
 	}
-	return nil
-}
-
-func (r *categoryRepo) CheckExistence(ctx *gin.Context, db Querier, id int32) error {
-	query := `
-		SELECT 1 AS exist FROM categories
-		WHERE id = $1
-	`
-	var exist int32
-	err := db.QueryRow(ctx, query, id).Scan(&exist)
-	if err != nil {
-		return Parse(err, "Category", "CheckExistence", make(Constraints))
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Category", "Delete", make(Constraints))
 	}
 	return nil
 }
@@ -121,12 +109,15 @@ func (r *categoryRepo) Update(
 		WHERE id = $1
 	`
 
-	_, err := db.Exec(ctx, query, id, newName)
+	result, err := db.Exec(ctx, query, id, newName)
 	if err != nil {
 		return Parse(err, "Category", "Update", Constraints{
 			UniqueViolationCode:  "name",
 			NotNullViolationCode: "name",
 		})
+	}
+	if result.RowsAffected() == 0 {
+		return Parse(pgx.ErrNoRows, "Category", "Update", make(Constraints))
 	}
 	return nil
 }
