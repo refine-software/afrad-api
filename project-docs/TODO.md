@@ -36,5 +36,5 @@
 - [x] The database errors when being mapped are getting a column name, which is a bad why of determining which column is causing the issue, find a better way.
       To reproduce the bad behavior, try to submit a review then submit the review again on the same product, you'll get a conflict,
       Then try to post a review on a non existing product and see the returned message, compare the messages from these 2 cases and you'll see the problem.
-- [ ] use result of db.Exec in every update or delete method instead of checking existence.
-- [ ] use convStrToInt helper function instead of getting the param manually.
+- [x] use result of db.Exec in every update or delete method instead of checking existence.
+- [x] use convStrToInt helper function instead of getting the param manually.
