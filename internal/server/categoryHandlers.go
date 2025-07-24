@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -65,27 +64,9 @@ func (s *Server) getCategories(ctx *gin.Context) {
 func (s *Server) deleteCategory(ctx *gin.Context) {
 	categoryRepo := s.DB.Category()
 	db := s.DB.Pool()
+	id := convStrToInt(ctx, ctx.Param("id"), "category_id")
 
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-	}
-
-	err = categoryRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "category doesn't exists",
-			},
-			err,
-		)
-		return
-	}
-
-	err = categoryRepo.Delete(ctx, db, int32(id))
+	err := categoryRepo.Delete(ctx, db, int32(id))
 	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(
 			ctx,
@@ -121,25 +102,7 @@ func (s *Server) updateCategory(ctx *gin.Context) {
 	categoryRepo := s.DB.Category()
 	db := s.DB.Pool()
 
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-	}
-
-	err = categoryRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "category doesn't exists",
-			},
-			err,
-		)
-		return
-	}
-
+	id := convStrToInt(ctx, ctx.Param("id"), "category_id")
 	err = categoryRepo.Update(ctx, db, int32(id), req.Name)
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)

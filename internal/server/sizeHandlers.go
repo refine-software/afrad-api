@@ -1,12 +1,9 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
 )
@@ -89,12 +86,7 @@ func (s *Server) updateSize(ctx *gin.Context) {
 		return
 	}
 
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
+	id := convStrToInt(ctx, ctx.Param("id"), "size_id")
 
 	if req.Size == "" && req.Label == "" {
 		utils.Fail(
@@ -108,21 +100,6 @@ func (s *Server) updateSize(ctx *gin.Context) {
 	db := s.DB.Pool()
 	sizeRepo := s.DB.Size()
 
-	fmt.Println(req)
-
-	err = sizeRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "size doesn't exists",
-			},
-			err,
-		)
-		return
-	}
-
 	err = sizeRepo.Update(ctx, db, &models.Size{ID: int32(id), Size: req.Size, Label: req.Label})
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
@@ -133,30 +110,11 @@ func (s *Server) updateSize(ctx *gin.Context) {
 }
 
 func (s *Server) deleteSize(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
-
+	id := convStrToInt(ctx, ctx.Param("id"), "size_id")
 	db := s.DB.Pool()
 	sizeRepo := s.DB.Size()
 
-	err = sizeRepo.CheckExistence(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "size doesn't exists",
-			},
-			err,
-		)
-		return
-	}
-
-	err = sizeRepo.Delete(ctx, db, int32(id))
+	err := sizeRepo.Delete(ctx, db, int32(id))
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)

@@ -1,11 +1,7 @@
 package server
 
 import (
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
-	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
@@ -54,28 +50,10 @@ func (s *Server) updateColor(ctx *gin.Context) {
 		return
 	}
 
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
+	id := convStrToInt(ctx, ctx.Param("id"), "color_id")
 
 	db := s.DB.Pool()
 	colorRepo := s.DB.Color()
-
-	err = colorRepo.CheckExistenece(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "color not found",
-			},
-			err,
-		)
-		return
-	}
 
 	err = colorRepo.Update(ctx, db, int32(id), req.Color)
 	if err != nil {
@@ -87,30 +65,11 @@ func (s *Server) updateColor(ctx *gin.Context) {
 }
 
 func (s *Server) deleteColor(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.Fail(ctx, utils.ErrBadRequest, err)
-		return
-	}
-
+	id := convStrToInt(ctx, ctx.Param("id"), "color_id")
 	db := s.DB.Pool()
 	colorRepo := s.DB.Color()
 
-	err = colorRepo.CheckExistenece(ctx, db, int32(id))
-	if err != nil && database.IsDBNotFoundErr(err) {
-		utils.Fail(
-			ctx,
-			&utils.APIError{
-				Code:    http.StatusBadRequest,
-				Message: "color not found",
-			},
-			err,
-		)
-		return
-	}
-
-	err = colorRepo.Delete(ctx, db, int32(id))
+	err := colorRepo.Delete(ctx, db, int32(id))
 	if err != nil {
 		apiErr := utils.MapDBErrorToAPIError(err)
 		utils.Fail(ctx, apiErr, err)
