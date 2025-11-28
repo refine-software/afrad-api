@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +39,7 @@ func (s *Server) passwordReset(ctx *gin.Context) {
 	passwordRestRepo := s.DB.PasswordReset()
 	db := s.DB.Pool()
 
-	// check if the  exists
+	// check if the email exists
 	err = userRepo.CheckEmailExistence(ctx, db, req.Email)
 	if err != nil && database.IsDBNotFoundErr(err) {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
@@ -136,18 +137,32 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 	passwordRestRepo := s.DB.PasswordReset()
 	db := s.DB.Pool()
 
-	// get the user_id by email
 	userID, err := userRepo.GetIDByEmail(ctx, db, req.Email)
 	if err != nil {
-		utils.MapDBErrorToAPIError(err)
-		utils.Fail(ctx, utils.ErrInternal, err)
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(ctx, apiErr, errors.New("Couldn't fetch user id from database"))
 		return
 	}
 
+	/*
+	 ISSUE:
+	 This logic assumes "most recent" means "the one the user should use." Consider this scenario:
+	 1. User requests reset → gets OTP #1
+	 2. User requests reset again → gets OTP #2
+	 3. User tries to use OTP #1 → Your code will check OTP #2 instead
+	*/
 	passwordReset, err := passwordRestRepo.Get(ctx, db, int32(userID))
 	if err != nil {
-		utils.MapDBErrorToAPIError(err)
-		utils.Fail(ctx, utils.ErrInternal, err)
+		apiErr := utils.MapDBErrorToAPIError(err)
+		utils.Fail(ctx, apiErr, err)
+		return
+	}
+
+	if passwordReset.IsUsed {
+		utils.Fail(ctx, &utils.APIError{
+			Code:    http.StatusBadRequest,
+			Message: "This password reset code has already been used",
+		}, errors.New("password reset code already used"))
 		return
 	}
 
@@ -159,7 +174,10 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 
 	// check if OTP expired
 	if time.Now().After(passwordReset.ExpiresAt) {
-		utils.Fail(ctx, utils.ErrUnauthorized, errors.New("OTP is expired"))
+		utils.Fail(ctx, &utils.APIError{
+			Code:    http.StatusBadRequest,
+			Message: "This password reset code has expired. Please request a new one.",
+		}, errors.New("password reset code expired"))
 		return
 	}
 
@@ -179,7 +197,7 @@ func (s *Server) resetPasswordConfirm(ctx *gin.Context) {
 			return err
 		}
 
-		err = passwordRestRepo.Update(ctx, tx, int32(userID))
+		err = passwordRestRepo.UpdateAttemptToUsed(ctx, tx, int32(userID))
 		if err != nil {
 			return err
 		}

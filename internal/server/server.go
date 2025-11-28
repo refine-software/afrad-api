@@ -8,11 +8,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	ginbinding "github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/refine-software/afrad-api/config"
 	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/database"
 	"github.com/refine-software/afrad-api/internal/s3"
+	myvalidator "github.com/refine-software/afrad-api/internal/utils/validator"
 )
 
 type Server struct {
@@ -38,6 +41,10 @@ func NewServer() *http.Server {
 	}
 
 	auth.InitOauth(env)
+
+	if v, ok := ginbinding.Validator.Engine().(*validator.Validate); ok {
+		myvalidator.RegisterTranslations(v)
+	}
 
 	NewServer := &Server{
 		port: env.Port,

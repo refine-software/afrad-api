@@ -99,19 +99,14 @@ func (s *Server) upsertUser(
 	return u, upsertResult{}
 }
 
-type loginRes struct {
-	AccessToken string      `json:"accessToken"`
-	User        models.User `json:"user"`
-}
-
 // @Summary      Google OAuth Callback
 // @Description  Handles the Google OAuth callback, authenticates the user, and returns a JWT access token.
 // @Tags         OAuth
 // @Accept       json
 // @Produce      json
-// @Param        code   query     string  true  "OAuth authorization code"
-// @Param        state  query     string  false "OAuth state (if used)"
-// @Success      200    {object}  loginResDocs   "Successful login with JWT token and user data"
+// @Param        code   query     string  true  	"OAuth authorization code"
+// @Param        state  query     string  false 	"OAuth state (if used)"
+// @Success      200    {object}  loginResDocs   	"Successful login with JWT token and user data"
 // @Failure      400    {object}  utils.APIError  "Bad request or invalid input"
 // @Failure      401    {object}  utils.APIError  "Unauthorized - Invalid OAuth token"
 // @Failure      500    {object}  utils.APIError  "Internal Server Error"

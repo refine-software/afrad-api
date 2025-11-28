@@ -17,6 +17,11 @@ type loginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type loginRes struct {
+	AccessToken string      `json:"accessToken"`
+	User        models.User `json:"user"`
+}
+
 // @Summary      Email/Password Login
 // @Description  Logs in a user using email and password. Returns an access token and user data.
 // @Tags         Auth

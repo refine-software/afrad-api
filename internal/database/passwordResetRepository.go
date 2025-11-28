@@ -15,7 +15,7 @@ type PasswordResetRepository interface {
 	Get(ctx *gin.Context, db Querier, userID int32) (*models.PasswordReset, error)
 
 	// update is_used column to true by user_id
-	Update(ctx *gin.Context, db Querier, userID int32) error
+	UpdateAttemptToUsed(ctx *gin.Context, db Querier, userID int32) error
 
 	// count the OTP codes per day
 	CountOTPCodesPerDay(ctx *gin.Context, db Querier, userID int32) (int, error)
@@ -63,7 +63,7 @@ func (r *passwordResetRepo) Get(
 	return &p, nil
 }
 
-func (r *passwordResetRepo) Update(ctx *gin.Context, db Querier, userID int32) error {
+func (r *passwordResetRepo) UpdateAttemptToUsed(ctx *gin.Context, db Querier, userID int32) error {
 	query := `
 		UPDATE password_resets
 		SET is_used = true

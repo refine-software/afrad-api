@@ -10,13 +10,13 @@ import (
 	"github.com/refine-software/afrad-api/internal/utils"
 )
 
-type categoryRequest struct {
+type createCategoryReq struct {
 	Name     string `json:"name"     binding:"required"`
 	ParentID int32  `json:"parentId"`
 }
 
 func (s *Server) createCategory(ctx *gin.Context) {
-	var req categoryRequest
+	var req createCategoryReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrBadRequest, err)
@@ -87,12 +87,12 @@ func (s *Server) deleteCategory(ctx *gin.Context) {
 	utils.Success(ctx, nil)
 }
 
-type updateReq struct {
+type updateCategoryReq struct {
 	Name string `json:"name" binding:"required"`
 }
 
 func (s *Server) updateCategory(ctx *gin.Context) {
-	var req categoryRequest
+	var req updateCategoryReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		utils.Fail(ctx, utils.ErrBadRequest, err)

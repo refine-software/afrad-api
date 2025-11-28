@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +10,7 @@ import (
 	"github.com/refine-software/afrad-api/internal/auth"
 	"github.com/refine-software/afrad-api/internal/models"
 	"github.com/refine-software/afrad-api/internal/utils"
+	"github.com/refine-software/afrad-api/internal/utils/validator"
 )
 
 func (s *Server) getUserReviews(c *gin.Context) {
@@ -37,8 +39,8 @@ func (s *Server) getUserReviews(c *gin.Context) {
 }
 
 type ReviewReq struct {
-	Rating    int    `json:"rating"    binding:"required"`
-	Review    string `json:"review"`
+	Rating    int    `json:"rating"    binding:"required,min=0,max=5"`
+	Review    string `json:"review"    binding:"min=8"`
 	ProductID int    `json:"productId" binding:"required"`
 }
 
@@ -46,7 +48,12 @@ func (s *Server) postReview(c *gin.Context) {
 	var req ReviewReq
 	err := c.ShouldBindJSON(&req)
 	if err != nil {
-		utils.Fail(c, utils.ErrBadRequest, err)
+		errs := validator.ParseValidationErrors(err)
+		utils.Fail(c, &utils.APIError{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid request data",
+			Errors:  errs,
+		}, err)
 		return
 	}
 
