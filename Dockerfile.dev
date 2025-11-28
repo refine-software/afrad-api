@@ -1,5 +1,5 @@
 # Stage 1: Base builder with Go & Air installed
-FROM golang:1.24.3-alpine3.21 AS base
+FROM golang:1.25.4-alpine3.22 AS base
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN go mod download && \
 
 
 # Stage 2: Development environment
-FROM golang:1.24.3-alpine3.21 AS dev
+FROM golang:1.25.4-alpine3.22 AS dev
 
 WORKDIR /app
 
